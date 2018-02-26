@@ -1,0 +1,15 @@
+[Unit]
+Description=TTN Packet Forwarder Service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+TimeoutStartSec=infinity
+Type=simple
+TimeoutSec=infinity
+RestartSec=10
+WorkingDirectory=/opt/ttn-gateway
+ExecStartPre=/opt/ttn-gateway/ResetIC880A
+ExecStart=/opt/ttn-gateway/mp_pkt_fwd
+Restart=always

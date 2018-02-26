@@ -29,3 +29,89 @@ __apt_source buster \
   --component "main contrib non-free"
 
 __apt_default_release --release stretch
+
+############################################
+# Enable SPI
+############################################
+__line enable_spi \
+  --file /boot/uEnv.txt \
+  --line 'cape_enable=bone_capemgr.enable_partno=BB-SPIDEV0'
+
+############################################
+# Packet forwarder
+############################################
+__directory /opt/ttn-gateway
+
+# TODO: Restart packetforwarder when the binary changes. The __file type
+# outputs an "upload" message when it changes the file, but that only
+# happens _after_ this manifest is ran, so that probably requires a
+# specific type to just reload on a specific message
+# See also https://github.com/ungleich/cdist/issues/637
+#
+# Install the actual forwarder binary
+__file /opt/ttn-gateway/mp_pkt_fwd \
+	--source $__files/forwarder/mp_pkt_fwd \
+	--mode 755
+
+# Install needed (self-compiled) libraries
+__directory /usr/local/lib
+for f in libpaho-embed-mqtt3c.so.1.0  libttn-gateway-connector.so; do
+  __file "/usr/local/lib/$f" --source "$__files/forwarder/lib/$f"
+done
+__link /usr/local/lib/libpaho-embed-mqtt3c.so.1 --source libpaho-embed-mqtt3c.so.1.0 --type symbolic
+
+# Tool to reset concentrator board by twiddling some GPIO pin.
+# Copied from an older Lorank gateway, (some version of) the source can
+# be found here: https://github.com/Ideetron/Lorank/blob/master/lorank8v1/ResetIC880A.cpp
+# Might be replaceable by reset_lgw.sh, though a first try (passing "14"
+# as the GPIO number) did not seem to work:
+# https://github.com/kersing/lora_gateway/blob/master/reset_lgw.sh
+__file /opt/ttn-gateway/ResetIC880A \
+	--source $__files/forwarder/ResetIC880A \
+	--mode 755
+
+__systemd_unit packet-forwarder.service \
+	--source $__files/forwarder/packet-forwarder.service \
+	--state present \
+        --enablement-state enabled
+
+# This file was downloaded from TTN verbatim:
+# https://raw.githubusercontent.com/TheThingsNetwork/gateway-conf/master/EU-global_conf.json
+__config_file /opt/ttn-gateway/global_conf.json \
+  --onchange 'systemctl restart packet-forwarder.service' \
+  --source $__files/forwarder/global_conf.json
+
+# Get the access key to use from TTN
+ttnkey=$(ttnctl gateways info "${hostname}" | grep 'Access Key' | sed 's/\s*Access Key: //')
+
+if [ -z "$ttnkey" ]; then
+  # If we couldn't get the key, assume that one is already configured.
+  # TODO: Check that there is a pre-existing config file and error out
+  # otherwise?
+  echo "Could not figure out TTN gateway key, skipping gateway configuration!" 2>1
+else
+  echo "Found TTN gateway key: ${ttnkey}"
+  # TODO: Start and configure gateway using something like:
+  #   https://github.com/jpmeijers/ttn-resin-gateway-rpi/blob/master/run.py
+  # Possibly using Adafruit_BBIO for GPIO instead of ResetIC880A above:
+  #   https://learn.adafruit.com/setting-up-io-python-library-on-beaglebone-black/gpio
+  __config_file /opt/ttn-gateway/local_conf.json \
+    --onchange 'systemctl restart packet-forwarder.service' \
+    --source - \
+<<EOF
+{
+    "gateway_conf": {
+        "servers": [
+            {
+                "serv_type": "ttn",
+                "server_address": "router.eu.thethings.network",
+                "serv_gw_id": "${hostname}",
+                "serv_gw_key": "${ttnkey}",
+                "serv_enabled": true
+            }
+        ],
+        "gps": false
+    }
+}
+EOF
+fi
