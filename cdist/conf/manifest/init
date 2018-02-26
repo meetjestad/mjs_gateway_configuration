@@ -1,0 +1,31 @@
+# From here, all tasks implicitly depend on the previous one
+export CDIST_ORDER_DEPENDENCY=1
+
+############################################
+# Hostname
+############################################
+
+# Since $__targethost specifies *how* to reach the gateway, but not
+# necessarily it's hostname or id, you can explicitly set
+# CDIST_SET_HOSTNAME on the first run to configure the hostname, and
+# afterwards, it uses the previously configured hostname for finding out
+# the TTN key
+# This also sets the $hostname variable to retrieve the ttnkey below.
+if [ -n "${CDIST_SET_HOSTNAME}" ]; then
+  __hostname --name "${CDIST_SET_HOSTNAME}"
+  hostname="${CDIST_SET_HOSTNAME}"
+  echo "Setting hostname to \"${hostname}\""
+else
+  hostname=$(cat "$__explorer/hostname")
+  echo "Using existing hostname \"${hostname}\""
+fi
+
+############################################
+# Apt
+############################################
+__apt_source buster \
+  --uri http://deb.debian.org/debian \
+  --distribution buster \
+  --component "main contrib non-free"
+
+__apt_default_release --release stretch
