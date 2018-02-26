@@ -115,3 +115,32 @@ else
 }
 EOF
 fi
+
+############################################
+# OpenVPN
+############################################
+__package_apt openvpn
+
+__directory /etc/openvpn/tika
+
+__config_file /etc/openvpn/tika/ca.crt \
+  --source $__files/vpn/tika/ca.crt
+
+if [ -f "$__files/vpn/keys/${hostname}.crt" -a -f "$__files/vpn/keys/${hostname}.crt" ]; then
+  __config_file /etc/openvpn/tika/client.crt \
+    --source $__files/vpn/keys/${hostname}.crt
+
+  __config_file /etc/openvpn/tika/client.key \
+    --source $__files/vpn/keys/${hostname}.key
+else
+  # TODO: Check if keys are already present
+  echo "OpenVPN client keys not found, skipping them!" 2>1
+fi
+
+# This restarts only when tika.conf is changed, see
+# https://github.com/ungleich/cdist/issues/637
+__config_file /etc/openvpn/tika.conf \
+  --source $__files/vpn/tika.conf \
+  --onchange 'systemctl restart openvpn@tika.service'
+
+__start_on_boot openvpn@tika.service
