@@ -144,3 +144,17 @@ __config_file /etc/openvpn/tika.conf \
   --onchange 'systemctl restart openvpn@tika.service'
 
 __start_on_boot openvpn@tika.service
+
+############################################
+# OpenVPN check script
+############################################
+# TODO: Replace by something better. This script hardcodes the VPN
+# server address. It would probably be better to have a watchdog cron
+# job that reboots if a specific file has a timestamp > 24h (or
+# whatever) old, and then have a cronjob on the VPN server that ssh's to
+# the gateway and touches that file every 6h (or so). Then the entire
+# stack of VPN and SSH access is tested, instead of just the IP
+# connection.
+__config_file /etc/cron.daily/vpn-check \
+  --source $__files/vpn-check \
+  --mode 755
