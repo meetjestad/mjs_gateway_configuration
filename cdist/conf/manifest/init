@@ -21,6 +21,15 @@ else
 fi
 
 ############################################
+# SSH keys
+############################################
+# Note: This *overwrites* any existing keys, so do not lock yourself out!
+__directory /root/.ssh --mode 700
+__file /root/.ssh/authorized_keys \
+	--source $__files/authorized_keys \
+	--mode 600
+
+############################################
 # Apt
 ############################################
 __apt_source buster \
