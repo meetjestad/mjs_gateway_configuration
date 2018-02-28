@@ -30,6 +30,14 @@ __file /root/.ssh/authorized_keys \
 	--mode 600
 
 ############################################
+# Lock debian user's password
+############################################
+# This replaces the user's password with !, which effectively prevents
+# password auth for the user, similar to what passwd --lock does. This
+# does not prevent key authentication for the user.
+__user debian --password !
+
+############################################
 # Apt
 ############################################
 __apt_source buster \
