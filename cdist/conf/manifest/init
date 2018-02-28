@@ -33,7 +33,24 @@ __apt_default_release --release stretch
 ############################################
 # Enable SPI
 ############################################
+
+# Enable SPI hardware and set up SPI pins by loading an overlay.
+# https://groups.google.com/d/msg/beagleboard/RewjY34TPYE/6b6YjSu0FQAJ
+# Note that by default, in the Debian 9.3 image there is a "universal
+# cape" overlay, which enables the SPI hardware, but does not setup the
+# SPI pins (instead, it allows setting up pin direction using the
+# config-pin command at runtime). This means that by default, there are
+# /dev/spidev.x.x files present, but they won't work.
 __line enable_spi \
+  --file /boot/uEnv.txt \
+  --line 'dtb_overlay=/lib/firmware/BB-SPIDEV0-00A0.dtbo'
+
+# Enable SPI hardware when u-boot overlays are not enabled or supported,
+# using the older capemgr method.
+# Note that when booting from SD, the u-boot from the EMMC is still
+# used. If this is an older version that does not support u-boot
+# overlays, below line is also needed to enable SPI.
+__line enable_spi_old \
   --file /boot/uEnv.txt \
   --line 'cape_enable=bone_capemgr.enable_partno=BB-SPIDEV0'
 
