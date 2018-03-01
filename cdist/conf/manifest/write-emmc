@@ -1,0 +1,16 @@
+############################################
+# Enable write to EMMC
+############################################
+flasher_script="/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh"
+# Check that the flasher script actually exists
+__file "${flasher_script}" --state pre-exists
+
+# Configure u-boot to start the flasher script on subsequent boots
+__line write_to_emmc \
+  --file /boot/uEnv.txt \
+  --line "cmdline=init=${flasher_script}"
+
+############################################
+# Reboot
+############################################
+. $__manifest/reboot
