@@ -21,8 +21,8 @@ should be able to use this repository as-is.
 
 If you are not involved with Meetjestad, but are working with a Lorank
 gateway, you should be able to use most of this repository as as
-(caveats are the OpenVPN configuration and the hardcoded EU frequency
-plan for the forwarder).
+(caveats are the OpenVPN configuration, the hardcoded EU frequency
+plan for the forwarder and the addition of a HTU21D sensor).
 
 If you do not have a Lorank, but another Beagleboard (or possibly even a
 rpi) with an IMST iC880A board, this repository might serve as useful
