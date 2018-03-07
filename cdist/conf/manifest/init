@@ -198,15 +198,15 @@ __config_file /etc/cron.daily/vpn-check \
 ############################################
 # This is a compiled device-tree overlay file. The source file, with
 # compilation instructions is in the same directory. It applies to a
-# HTU21D sensor connected to the I²C grove port (i2c2) on the
+# SI7013/20/21 sensor connected to the I²C grove port (i2c2) on the
 # BeagleBoard Green. After loading, the sensor can be read through
 # /sys/bus/iio or /sys/bus/i2c.
-__file /lib/firmware/HTU21D.dtbo \
-  --source $__files/htu21d/HTU21D.dtbo
+__file /lib/firmware/SI7020.dtbo \
+  --source $__files/si7020/SI7020.dtbo
 
 # TODO: Make optional? Now it just tries to load and fails if no sensor
 # is present, though this does not have any side effects (provided no
 # other I²C device is at the same address).
-__line enable_htu21d \
+__line enable_si7020 \
   --file /boot/uEnv.txt \
-  --line 'uboot_overlay_addr4=/lib/firmware/HTU21D.dtbo'
+  --line 'uboot_overlay_addr4=/lib/firmware/SI7020.dtbo'
