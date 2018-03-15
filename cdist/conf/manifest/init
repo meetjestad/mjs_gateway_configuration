@@ -210,3 +210,11 @@ __file /lib/firmware/SI7020.dtbo \
 __line enable_si7020 \
   --file /boot/uEnv.txt \
   --line 'uboot_overlay_addr4=/lib/firmware/SI7020.dtbo'
+
+############################################
+# 3G keepalive hack
+############################################
+__systemd_unit 3g-keepalive-hack.service \
+	--source $__files/3g-keepalive-hack/3g-keepalive-hack.service \
+	--state present \
+        --enablement-state enabled

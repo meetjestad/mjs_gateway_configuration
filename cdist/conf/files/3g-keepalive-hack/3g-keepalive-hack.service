@@ -1,0 +1,31 @@
+[Unit]
+Description=Keepalive ping to work around 3G sleeping
+
+# Wait for networking to be available before first starting this
+After=network-online.target
+Wants=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+
+# This is the core of this service: An infinitely running ping with a
+# short interval (-i), without generating output (-q) and without any
+# payload (-s).
+# This pings to an IP address reserved for "testing purposes", which
+# should not be actually routable. This address seems to route to the
+# default gateway of the ISP, but does not actually reach anyone. This
+# prevents having to bug a server with our traffic, and means ther is no
+# return traffic, saving half the bandwidth.
+# Before doing the ping, check if there are any Huawei devices present.
+# If not, just return.
+ExecStart=/bin/sh -c "lsusb -d12d1: && ping -q -i 3 -s 0 192.0.2.1 || echo 'No Huawei device found, no need to ping'"
+
+# Make sure to recheck for a Huawei device every 5min if not found.
+# Also, if the ping crashes for some reason, this makes sure to restart
+# (after a 5min delay too).  # needed, it also restarted. In both cases,
+# this waits 5 minutes before doing the restart.
+Restart=always
+RestartSec=5min
