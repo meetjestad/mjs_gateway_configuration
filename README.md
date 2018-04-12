@@ -100,11 +100,37 @@ root. Password logins are disabled for root by default, so make sure to
 allow root logins using your SSH public key. On a clean system, you can
 login with user "debian" and password "temppwd".
 
-ssh-copy-id -i .ssh/keys/grubby.pub debian@beaglebone.local
-ssh -t debian@beaglebone.local sudo cp -r .ssh /root/
+    ssh-copy-id -i .ssh/keys/grubby.pub debian@beaglebone.local
+    ssh -t debian@beaglebone.local sudo cp -r .ssh /root/
 
 If set up correctly, `ssh root@beaglebone.local` should log in without
 asking for a password.
+
+Internet connection
+-------------------
+For the configuration run below, the Lorank will need a working internet
+connection. If you plugged it into a working wired network, you are done
+and can skip to the next section.
+
+If you are connecting to the Lorank through USB networking from a system
+that has a wifi or ethernet connection, you can set up the Lorank to
+access the internet through your own system. On Linux, this can be done
+by first enabling internet sharing / NAT on your system:
+
+    # echo 1 > /proc/sys/net/ipv4/ip_forward
+    # iptables -t nat -A POSTROUTING  -o wlan0 -j MASQUERADE
+
+Change `wlan0` to whatever interface your are using to access the
+internet. If you have more iptables / firewalling rules in place, you
+might need additional rules to allow the traffic.
+
+Then set up the Lorank to use Google's DNS servers and route all traffic
+over the USB connection.
+
+	# echo nameserver 8.8.8.8 > /etc/resolv.conf
+	# ip route add default via 192.168.7.1
+
+Note that none of these changes are kept after a reboot.
 
 Inital cdist run
 ----------------
@@ -117,7 +143,9 @@ To set up the gateway, run:
 
 	CDIST_SET_HOSTNAME=mjs-gateway-123 ./bin/cdist config -v beaglebone.local
 
-After the first run, reboot the gateway to enable the new hostname.
+After the first run, reboot the gateway to enable the new hostname. You
+let cdist issue a reboot using `./bin/cdist config -v -i
+cdist/conf/manifest/reboot beaglebone.local`).
 
 Write to embedded flash
 -----------------------
