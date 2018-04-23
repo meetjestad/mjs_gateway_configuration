@@ -59,6 +59,10 @@ If the gateway was previously configured with the proper keys, those are
 left in place, so cdist can still be used to make config changes without
 access to the keys.
 
+Note that the OpenVPN connection is only used for remotely accessing
+deployed gateways later, it is not required for the gateway operation
+itself.
+
 New gateways
 ============
 When adding a new gateway:
