@@ -28,6 +28,12 @@ If you do not have a Lorank, but another Beagleboard (or possibly even a
 rpi) with an IMST iC880A board, this repository might serve as useful
 inspiration.
 
+cdist is a configuration tool, which is intended to run on your own
+computer. It uses shell scripts and python scripts, and has been tested
+on Linux, it might work on other platforms as well. When you run cdist,
+it connects to the gateway using SSH, copying in files and running
+commands to configure the gateway.
+
 The actual configuration description, which is the core of this repo,
 can be found in `cdist/conf/manifest/init`. There are also a few other
 manifests in that directory, that can be used by passing them to the
@@ -39,9 +45,10 @@ This repository is not entirely self-contained. Since it is public, some
 private details have been omitted. In particular:
  - The TTN key used to authenticate the forwarder to TTN. Since this key
    can be automatically retrieved using the `ttnctl` command, this is
-   what the script tries to do. If you have a working `ttnctl` command,
-   which is logged into TTN and has access to the gateway details, the
-   key will be configured automatically.
+   what the script tries to do. If you have a working `ttnctl` command
+   (on the computer than runs cdist), which is logged into TTN and has
+   access to the gateway details, the key will be configured
+   automatically.
  - The OpenVPN client keys. These are copied from
    `cdist/conf/files/vpn/keys/${hostname}.{key,crt}` if present. These
    keys can be copied out of `/etc/openvpn/ca/keys` on the OpenVPN
