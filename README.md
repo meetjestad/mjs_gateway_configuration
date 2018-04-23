@@ -58,6 +58,13 @@ When adding a new gateway:
  - It must be added in the TTN console. The convention is to use
    `mjs-gateway-123` as the gateway id, which must match the hostname
    later.
+
+   Note that the forwarder installed by this script uses the newer,
+   authenticated and TCP-based TTN forwarder protocol. When registering
+   the gateway with TTN, be sure to *not* tick the "legacy packet
+   forwarder" box. This new protocol no longer uses a gateway EUI to
+   identify the gateway, so the EUI originally configured by Ideetron is
+   no longer relevant.
  - OpenVPN certificates must be generated on the VPN servers. As root:
    ```
    cd /etc/openvpn/ca
