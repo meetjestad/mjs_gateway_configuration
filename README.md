@@ -194,39 +194,30 @@ applied by running cdist again:
 Here, the hostname is assumed to be `mjs-gateway-123`, with the gateway
 present in the local network.
 
-Remote configuration (WIP)
---------------------------
-Work is ongoing to allow easy remote access to the gateways, which
-should allow easily adapting their configuration remotely. Cdist offers
-an "inventory" feature, which is essentially just a list of remote
-hostnames to configure, which can be used to do a convenient "update
-all gateways" command.
+Remote configuration
+--------------------
+The gateways are configured to set up a "phone home" ssh connection to a
+central [Nuttssh](https://github.com/matthijskooijman/nuttssh) server,
+which allows accessing the gateways through this server. To use this,
+you can use the `ProxyJump` ssh option:
 
-This is still a work in progress, but below are some notes on how to
-make this work later. These commands are not ready to use yet.
+    ssh -o ProxyJump=meetjestad.net:2222 root@mjs-gateway-123
 
-However, by default (when `$HOME` is set), this inventory is loaded from
-~/.cdist instead of this repository, which is not really useful. Also,
-the inventory commands are not enabled by default. This could be solved
-by using a `cdist.conf` file:
+To let cdist make the same jump, you can add the following snippet to
+your `~/.ssh/config` file:
 
-	[GLOBAL]
-	beta = 1
-	inventory_dir = cdist/conf/inventory
+    Host mjs-*-gateway-*
+            ProxyJump meetjestad.net:2222
 
-And then pointing cdist to it:
+This instructs SSH to connect through the Nuttssh server for any
+hostname matching the pattern. Note that this does *not* match qualified
+hostnames (e.g. `mjs-gateway-123.local` will still connect directly as
+normal).
 
-	export CDIST_CONFIG_FILE=cdist.conf
-	./bin/cdist inventory list
+With the above, settings in place, you can reconfigure any remote
+gateway by simply running:
 
-Alternatively, you could unset `HOME` and set `CDIST_BETA` or pass `--beta`:
-
-	(unset HOME; ./bin/cdist inventory list --beta)
-
-Also see these issues:
-
- - https://github.com/ungleich/cdist/issues/635
- - https://github.com/ungleich/cdist/issues/636
+	./bin/cdist config mjs-gateway-123
 
 Updating the forwarder
 ----------------------
