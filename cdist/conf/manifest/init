@@ -39,6 +39,20 @@ __file /root/.ssh/authorized_keys \
 	--mode 600
 
 ############################################
+# Nuttssh remote access
+############################################
+__user nuttssh --system --create-home --password !
+
+# TODO: This generates an ssh key as part of the service startup. It
+# would be nicer if cdist did this, and printed the public key for
+# configuring the Nuttssh server.
+__systemd_unit nuttssh.service \
+	--source $__files/nuttssh/nuttssh.service \
+	--state present \
+        --restart \
+        --enablement-state enabled
+
+############################################
 # Lock debian user's password
 ############################################
 # This replaces the user's password with !, which effectively prevents
