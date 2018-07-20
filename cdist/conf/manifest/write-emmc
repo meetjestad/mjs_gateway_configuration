@@ -10,6 +10,12 @@ __line write_to_emmc \
   --file /boot/uEnv.txt \
   --line "cmdline=init=${flasher_script}"
 
+# Prevent regenerating the SSH key after flashing (which is useful when
+# flashing the same image to multiple boards, but not for us).
+__line disable_ssh_regeneration \
+  --file /boot/SOC.sh \
+  --line "disable_ssh_regeneration=true"
+
 ############################################
 # Reboot
 ############################################
