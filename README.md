@@ -207,10 +207,13 @@ To let cdist make the same jump, you can add the following snippet to
 your `~/.ssh/config` file:
 
     Host mjs-*-gateway-*
+            User root
             ProxyJump meetjestad.net:2222
 
 This instructs SSH to connect through the Nuttssh server for any
-hostname matching the pattern. Note that this does *not* match qualified
+hostname matching the pattern (and also default to connecting as
+`root`), so you can just use `ssh mjs-gateway-123` to connect to a
+gateway through Nuttssh. Note that this does *not* match qualified
 hostnames (e.g. `mjs-gateway-123.local` will still connect directly as
 normal).
 
