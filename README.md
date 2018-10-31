@@ -21,8 +21,8 @@ should be able to use this repository as-is.
 
 If you are not involved with Meetjestad, but are working with a Lorank
 gateway, you should be able to use most of this repository as as
-(caveats are the OpenVPN configuration, the hardcoded EU frequency
-plan for the forwarder and the addition of a HTU21D sensor).
+(caveats are the hardcoded EU frequency plan for the forwarder, the
+addition of a HTU21D sensor and the nuttssh remote access server).
 
 If you do not have a Lorank, but another Beagleboard (or possibly even a
 rpi) with an IMST iC880A board, this repository might serve as useful
@@ -42,45 +42,30 @@ manifests in that directory, that can be used by passing them to the
 External info
 -------------
 This repository is not entirely self-contained. Since it is public, some
-private details have been omitted. In particular:
- - The TTN key used to authenticate the forwarder to TTN. Since this key
-   can be automatically retrieved using the `ttnctl` command, this is
-   what the script tries to do. If you have a working `ttnctl` command
-   (on the computer than runs cdist), which is logged into TTN and has
-   access to the gateway details, the key will be configured
-   automatically.
- - The OpenVPN client keys. These are copied from
-   `cdist/conf/files/vpn/keys/${hostname}.{key,crt}` if present. These
-   keys can be copied out of `/etc/openvpn/ca/keys` on the OpenVPN
-   server.
+private details have been omitted. In particular, the TTN key used to
+authenticate the forwarder to TTN. Since this key can be automatically
+retrieved using the `ttnctl` command, this is what the script tries to
+do. If you have a working `ttnctl` command (on the computer than runs
+cdist), which is logged into TTN and has access to the gateway details,
+the key will be configured automatically.
 
-In both cases, if the keys cannot be obtained, their files are skipped.
-If the gateway was previously configured with the proper keys, those are
-left in place, so cdist can still be used to make config changes without
-access to the keys.
-
-Note that the OpenVPN connection is only used for remotely accessing
-deployed gateways later, it is not required for the gateway operation
-itself.
+If the key cannot be obtained, it is skipped and the forwarder will
+not work. If the gateway was previously configured with the proper keys,
+those are left in place, so cdist can still be used to make config
+changes without access to the keys.
 
 New gateways
 ============
-When adding a new gateway:
- - It must be added in the TTN console. The convention is to use
-   `mjs-gateway-123` as the gateway id, which must match the hostname
-   later.
+When adding a new gateway, it must be added in the TTN console. The
+convention is to use `mjs-gateway-123` as the gateway id, which must
+match the hostname later.
 
-   Note that the forwarder installed by this script uses the newer,
-   authenticated and TCP-based TTN forwarder protocol. When registering
-   the gateway with TTN, be sure to *not* tick the "legacy packet
-   forwarder" box. This new protocol no longer uses a gateway EUI to
-   identify the gateway, so the EUI originally configured by Ideetron is
-   no longer relevant.
- - OpenVPN certificates must be generated on the VPN servers. As root:
-   ```
-   cd /etc/openvpn/ca
-   source ./vars
-   ./build-key mjs-gateway-123
+Note that the forwarder installed by this script uses the newer,
+authenticated and TCP-based TTN forwarder protocol. When registering the
+gateway with TTN, be sure to *not* tick the "legacy packet forwarder"
+box. This new protocol no longer uses a gateway EUI to identify the
+gateway, so the EUI originally configured by Ideetron is no longer
+relevant.
    ```
 Then, proceed with the next section to install it.
 
