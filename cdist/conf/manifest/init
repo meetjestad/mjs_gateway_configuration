@@ -26,17 +26,19 @@ fi
 # Note: This *overwrites* any existing keys, so do not lock yourself out!
 case "$hostname" in
   mjs-bergen-*)
-    authorized_keys="authorized_keys_bergen"
+    authorized_keys="bergen"
     ;;
   *)
-    authorized_keys="authorized_keys_amersfoort"
+    authorized_keys="amersfoort"
     ;;
 esac
 
-__directory /root/.ssh --mode 700
-__file /root/.ssh/authorized_keys \
-	--source "$__files/$authorized_keys" \
-	--mode 600
+set --
+for f in ${authorized_keys}; do
+	set -- "$@" --keyfile "$__files/authorized_keys/$f"
+done
+
+__ssh_authorized_keys root "$@"
 
 ############################################
 # Nuttssh remote access
