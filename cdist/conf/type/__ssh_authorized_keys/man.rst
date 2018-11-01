@@ -24,7 +24,17 @@ REQUIRED PARAMETERS
 -------------------
 key
    the ssh key which shall be added to this authorized_keys file.
-   Must be a string and can be specified multiple times.
+   Must be a string.
+
+   Can be specified multiple times. Either --key or --keyfile must be
+   specified.
+
+keyfile
+   A file containing one or more SSH keys (one per line, just like the
+   regular authorized_keys file).
+
+   Can be specified multiple times. Either --key or --keyfile must be
+   specified.
 
 
 OPTIONAL PARAMETERS
