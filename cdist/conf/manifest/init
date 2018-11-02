@@ -120,7 +120,8 @@ __file /opt/ttn-gateway/mp_pkt_fwd \
 # Install needed (self-compiled) libraries
 __directory /usr/local/lib
 for f in libpaho-embed-mqtt3c.so.1.0  libttn-gateway-connector.so; do
-  __file "/usr/local/lib/$f" --source "$__files/forwarder/lib/$f"
+  # This abuses __config_file a bit, since it has an onchange option...
+  __config_file "/usr/local/lib/$f" --source "$__files/forwarder/lib/$f" --onchange ldconfig
 done
 __link /usr/local/lib/libpaho-embed-mqtt3c.so.1 --source libpaho-embed-mqtt3c.so.1.0 --type symbolic
 
