@@ -35,8 +35,8 @@ line
     Ignored if regex is given and state is 'absent'.
 
 regex
-    If state is 'present', search for this pattern and if it matches add
-    the given line.
+    If state is 'present', search for this pattern and if it is not
+    found, add the given line.
 
     If state is 'absent', ensure all lines matching the regular expression
     are absent.
