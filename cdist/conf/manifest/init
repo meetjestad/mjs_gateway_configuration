@@ -77,6 +77,16 @@ __apt_source buster \
 
 __apt_default_release --release stretch
 
+# Disables the unit
+__systemd_unit cloud9.service --enablement-state masked --restart
+__systemd_unit cloud9.socket --enablement-state masked --restart
+__systemd_unit bonescript.service --enablement-state masked --restart
+__systemd_unit bonescript.socket --enablement-state masked --restart
+__systemd_unit bonescript-autorun.service --enablement-state masked --restart
+__systemd_unit node-red.socket --enablement-state masked --restart
+__systemd_unit node-red.service --enablement-state masked --restart
+__systemd_unit apache2.service --enablement-state masked --restart
+
 ############################################
 # Enable SPI
 ############################################
