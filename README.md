@@ -174,7 +174,7 @@ Subsequent configuration
 After the initial install, changes can be made to the manifest, and
 applied by running cdist again:
 
-	./bin/cdist config mjs-gateway-123.local
+	./bin/cdist config -v mjs-gateway-123.local
 
 Here, the hostname is assumed to be `mjs-gateway-123`, with the gateway
 present in the local network.
