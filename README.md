@@ -188,19 +188,22 @@ you can use the `ProxyJump` ssh option:
 
     ssh -o ProxyJump=meetjestad.net:2222 root@mjs-gateway-123
 
-To let cdist make the same jump, you can add the following snippet to
-your `~/.ssh/config` file:
+To automatically let ssh jump (which also makes it easy to let cdist
+jump), you can add the following snippet to your `~/.ssh/config` file:
 
-    Host mjs-*-gateway-*
-            User root
+    Host mjs-*gateway-* !*.local
             ProxyJump meetjestad.net:2222
+
+    Host mjs-*gateway-*
+            User root
 
 This instructs SSH to connect through the Nuttssh server for any
 hostname matching the pattern (and also default to connecting as
 `root`), so you can just use `ssh mjs-gateway-123` to connect to a
 gateway through Nuttssh. Note that this does *not* match qualified
 hostnames (e.g. `mjs-gateway-123.local` will still connect directly as
-normal).
+normal). The root username is applied to both local connections and
+connections through Nuttssh.
 
 With the above, settings in place, you can reconfigure any remote
 gateway by simply running:
