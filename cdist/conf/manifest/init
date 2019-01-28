@@ -77,7 +77,11 @@ __apt_source buster \
 
 __apt_default_release --release stretch
 
-# Disables the unit
+############################################
+# Disable unneeded stuff
+############################################
+# This disables a bunch of unneeded (and insecure) services that are
+# installed by default on the IoT image that was used for some gateways
 __systemd_unit cloud9.service --enablement-state masked --restart
 __systemd_unit cloud9.socket --enablement-state masked --restart
 __systemd_unit bonescript.service --enablement-state masked --restart
