@@ -81,18 +81,40 @@ from scratch if needed.
 
 Clean Debian
 ------------
-To start clean, download a [Debian
-image](https://beagleboard.org/latest-images) for the Beagleboard Green
-(or Black for early Loranks). The Stretch IoT image has no GUI and seems
-most appropriate. You can unpack the image, write it to an SD card and
-insert it into the BeagleBoard to let the Lorank boot the clean system.
-The original system is unchanged on the internal flash (which can be
-overwritten later if everything works).
+To start clean, download a Debian image for the Beagleboard. You can
+unpack the image, write it to an SD card and insert it into the
+BeagleBoard to let the Lorank boot the clean system.  The original
+system is unchanged on the internal flash (which can be overwritten
+later if everything works).
+
+There are different flavours of images available, for different boards,
+based on different Debian or Ubuntu versions, through different
+websites, which makes figuring out what image to use a bit tricky. The
+default images from beagleboard.org are not suitable, since they only
+offer an lxqt flavour that includes a graphical environment, and a IoT
+flavour that includes all kinds of development tools accessible through
+the network without authentication. Rcn-ee.net offers a bunch of other
+images, among which a "console" image that seems fairly clean. The
+current stable version of Debian (stretch / 9.x) is recommended, the
+versions labeled "microsd" are ready to flash onto an SD card directly.
+
+The latest version of that image should be linked from [this wiki
+page][image overview], for example:
+http://rcn-ee.net/rootfs/2018-12-10/microsd/bone-debian-9.6-console-armhf-2018-12-10-2gb.img.xz
+
+You can browse the files on [rcn-ee.net](http://rcn-ee.net/rootfs) to
+find newer versions.
+
+Note that the console version used uses `arm.local` as the default
+hostname, rather than the `beaglebone.local` name that the
+beagleboard.org images use.
+
+[image overview]: https://elinux.org/BeagleBoardDebian#All_BeagleBone_Varients_and_PocketBeagle
 
 SSH login
 ---------
 If you plug in the Lorank to your local network and have mDNS (avahi)
-working, you can connect to "beaglebone.local". Alternatively, you can
+working, you can connect to "arm.local". Alternatively, you can
 find the Lorank's IP address from your router DHCP table, or power the
 Lorank from your computer, which also gives an USB network connection
 (the Lorank will be reachable at 192.168.7.2 or 192.168.6.2). If you use
@@ -103,10 +125,10 @@ root. Password logins are disabled for root by default, so make sure to
 allow root logins using your SSH public key. On a clean system, you can
 login with user "debian" and password "temppwd".
 
-    ssh-copy-id -i .ssh/keys/grubby.pub debian@beaglebone.local
-    ssh -t debian@beaglebone.local sudo cp -r .ssh /root/
+    ssh-copy-id -i .ssh/keys/grubby.pub debian@arm.local
+    ssh -t debian@arm.local sudo cp -r .ssh /root/
 
-If set up correctly, `ssh root@beaglebone.local` should log in without
+If set up correctly, `ssh root@arm.local` should log in without
 asking for a password.
 
 Internet connection
@@ -144,11 +166,11 @@ not, the basic system will work, but some parts will not.
 
 To set up the gateway, run:
 
-	CDIST_SET_HOSTNAME=mjs-gateway-123 ./bin/cdist config -v beaglebone.local
+	CDIST_SET_HOSTNAME=mjs-gateway-123 ./bin/cdist config -v arm.local
 
 After the first run, reboot the gateway to enable the new hostname. You
 let cdist issue a reboot using `./bin/cdist config -v -i
-cdist/conf/manifest/reboot beaglebone.local`).
+cdist/conf/manifest/reboot arm.local`).
 
 Write to embedded flash
 -----------------------
