@@ -78,6 +78,11 @@ __apt_source buster \
 __apt_default_release --release stretch
 
 ############################################
+# Useful packages
+############################################
+__package_apt vim --state present
+
+############################################
 # Disable unneeded stuff
 ############################################
 # This disables a bunch of unneeded (and insecure) services that are
