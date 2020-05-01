@@ -11,5 +11,11 @@ TimeoutSec=infinity
 RestartSec=10
 WorkingDirectory=/opt/ttn-gateway
 ExecStartPre=/opt/ttn-gateway/ResetIC880A
-ExecStart=/opt/ttn-gateway/mp_pkt_fwd
+# The /dev/spi/x.x symlinks provides a stable and predictable way to
+# address the right SPI device, so prefer that. However, older
+# beagleboard Debian versions did not have this symlink, and also
+# confusingly used spidev1.0 to address SPI0, so fall back to that one
+# for existing (Stretch-based) gateways.
+# See also https://github.com/adafruit/adafruit-beaglebone-io-python/issues/263
+ExecStart=/bin/sh -c 'exec /opt/ttn-gateway/mp_pkt_fwd -d $([ -d /dev/spi ] && echo /dev/spi/0.0 || echo /dev/spidev1.0)'
 Restart=always
