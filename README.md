@@ -179,7 +179,7 @@ If everything works (or whenever you feel like), you can [copy the SD
 card to the internal flash][write_emmc]. There's a cdist helper manifest to do this,
 which sets up the proper boot options and reboots the Lorank:
 
-	./bin/cdist config -v -i cdist/conf/manifest/write-emmc mjs-gateway-6.local
+	./bin/cdist config -v -i cdist/conf/manifest/write-emmc mjs-gateway-123.local
 
 After the reboot it should start flashing. While flashing, the 4 blue
 leds on the board will do a night-rider style sequence. After flashing
