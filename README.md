@@ -20,7 +20,7 @@ This repository is intended to be used with the Lorank gateways for the
 should be able to use this repository as-is.
 
 If you are not involved with Meetjestad, but are working with a Lorank
-gateway, you should be able to use most of this repository as as
+gateway, you should be able to use most of this repository as is
 (caveats are the hardcoded EU frequency plan for the forwarder, the
 addition of a HTU21D sensor and the nuttssh remote access server).
 
