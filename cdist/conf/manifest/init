@@ -198,6 +198,13 @@ fi
 # SI7013/20/21 sensor connected to the I²C grove port (i2c2) on the
 # BeagleBoard Green. After loading, the sensor can be read through
 # /sys/bus/iio or /sys/bus/i2c.
+#
+# e.g. (result in millidegree Celcius or millipercent):
+#  S=/sys/bus/iio/devices/iio\:device1/in_temp;
+#  echo "($(cat ${S}_raw) + $(cat ${S}_offset)) * $(cat ${S}_scale)" | bc
+#  S=/sys/bus/iio/devices/iio\:device1/in_humidityrelative;
+#  echo "($(cat ${S}_raw) + $(cat ${S}_offset)) * $(cat ${S}_scale)" | bc
+# See https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-bus-iio
 __file /lib/firmware/SI7020.dtbo \
   --source $__files/si7020/SI7020.dtbo
 
