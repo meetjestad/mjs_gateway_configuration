@@ -68,16 +68,6 @@ __systemd_unit nuttssh.service \
 __user debian --password !
 
 ############################################
-# Apt
-############################################
-__apt_source buster \
-  --uri http://deb.debian.org/debian \
-  --distribution buster \
-  --component "main contrib non-free"
-
-__apt_default_release --release stretch
-
-############################################
 # Useful packages
 ############################################
 __package_apt vim --state present
