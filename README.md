@@ -66,7 +66,7 @@ gateway with TTN, be sure to *not* tick the "legacy packet forwarder"
 box. This new protocol no longer uses a gateway EUI to identify the
 gateway, so the EUI originally configured by Ideetron is no longer
 relevant.
-   ```
+
 Then, proceed with the next section to install it.
 
 Complete (re)install
