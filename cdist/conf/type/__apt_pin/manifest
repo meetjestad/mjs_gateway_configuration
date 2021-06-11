@@ -57,6 +57,11 @@ __file "/etc/apt/preferences.d/$name" \
     --owner root --group root --mode 0644 \
     --state "$state" \
     --source - << EOF
+# Created by cdist ${__type##*/}
+# Do not change. Changes will be overwritten.
+#
+
+# $name
 Package: $package
 Pin: $pin
 Pin-Priority: $priority
