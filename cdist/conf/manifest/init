@@ -72,6 +72,11 @@ __systemd_unit nuttssh.service \
 __user debian --password !
 
 ############################################
+# Update apt index (but not every run)
+############################################
+__package_update_index --maxage 3600
+
+############################################
 # Useful packages
 ############################################
 __package_apt vim --state present
