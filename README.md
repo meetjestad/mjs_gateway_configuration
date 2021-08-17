@@ -43,29 +43,32 @@ External info
 -------------
 This repository is not entirely self-contained. Since it is public, some
 private details have been omitted. In particular, the TTN key used to
-authenticate the forwarder to TTN. Since this key can be automatically
-retrieved using the `ttnctl` command, this is what the script tries to
-do. If you have a working `ttnctl` command (on the computer than runs
-cdist), which is logged into TTN and has access to the gateway details,
-the key will be configured automatically.
-
-If the key cannot be obtained, it is skipped and the forwarder will
-not work. If the gateway was previously configured with the proper keys,
-those are left in place, so cdist can still be used to make config
-changes without access to the keys.
+authenticate the forwarder to TTN. Since this key can (since TTN v3) no
+longer be automatically retrieved using the `ttnctl` command, the script
+has a custom "explorer" script that checks if a key is already
+configured and uses that one. If not, it uses the ttn-lw-cli commandline
+tool to generate a new API key and uses that (which requires ttn-lw-cli
+is installed and authenticated with a user that has access to the
+gateway).
 
 New gateways
 ============
 When adding a new gateway, it must be added in the TTN console. The
 convention is to use `mjs-gateway-123` as the gateway id, which must
-match the hostname later.
+match the hostname later. Alternatively, you can use ttn-lw-cli with a
+command like this:
+
+        ttn-lw-cli gateways create mjs-gateway-bergen-3
+                --antenna.location.longitude 60.390500 --antenna.location.latitude 5.344300 \
+                --name "Meet je stad! Bergen #3 (Martin)" --organization-id meet-je-stad \
+                --location-public --require-authenticated-connection \
+                --schedule-anytime-delay 530ms --frequency-plan-id EU_863_870_TTN \
+                --version-ids.brand-id ideetron --version-ids.model-id lorank8
 
 Note that the forwarder installed by this script uses the newer,
 authenticated and TCP-based TTN forwarder protocol. When registering the
-gateway with TTN, be sure to *not* tick the "legacy packet forwarder"
-box. This new protocol no longer uses a gateway EUI to identify the
-gateway, so the EUI originally configured by Ideetron is no longer
-relevant.
+gateway with TTN, you can leave the "Gateway EUI" field empty (and tick
+the "Require authenticated connection" box).
 
 Then, proceed with the next section to install it.
 
