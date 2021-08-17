@@ -205,6 +205,9 @@ if [ -n "$cur_key" ]; then
 <<EOF
 {
     "gateway_conf": {
+	// Enable this to log raw packets to semtech servers (so also enable
+	// the 127.0.0.1 dummy server below.
+	"debug_log": false,
         "servers": [
             {
                 "serv_type": "ttn",
@@ -212,6 +215,12 @@ if [ -n "$cur_key" ]; then
                 "serv_gw_id": "${hostname}",
                 "serv_gw_key": "${cur_key}",
                 "serv_enabled": true
+            },
+            {
+                "server_address": "127.0.0.1",
+                "serv_port_up": 1700,
+                "serv_port_down": 1700,
+                "serv_enabled": false
             }
         ],
         "gps": false
