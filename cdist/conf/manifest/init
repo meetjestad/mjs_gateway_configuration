@@ -1,6 +1,10 @@
 # From here, all tasks implicitly depend on the previous one
 export CDIST_ORDER_DEPENDENCY=1
 
+# Note: stdout of this script is never shown, stderr is only shown when
+# something files. To get debug output, ensure it is sent to stderr (echo >&2)
+# and make this script file (exit 1 at the end).
+
 ############################################
 # Mark the timestamp of the last cdist run
 ############################################
@@ -19,10 +23,10 @@ __cdistmarker
 if [ -n "${CDIST_SET_HOSTNAME}" ]; then
   __hostname --name "${CDIST_SET_HOSTNAME}"
   hostname="${CDIST_SET_HOSTNAME}"
-  echo "Setting hostname to \"${hostname}\""
+  echo "Setting hostname to \"${hostname}\"" >&2
 else
   hostname=$(cat "$__explorer/hostname")
-  echo "Using existing hostname \"${hostname}\""
+  echo "Using existing hostname \"${hostname}\"" >&2
 fi
 
 ############################################
