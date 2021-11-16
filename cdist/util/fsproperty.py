@@ -33,7 +33,7 @@ class AbsolutePathRequiredError(cdist.Error):
         return 'Absolute path required, got: {}'.format(self.path)
 
 
-class FileList(collections.MutableSequence):
+class FileList(collections.abc.MutableSequence):
     """A list that stores it's state in a file.
 
     """
@@ -102,7 +102,7 @@ class FileList(collections.MutableSequence):
         self.__write(lines)
 
 
-class DirectoryDict(collections.MutableMapping):
+class DirectoryDict(collections.abc.MutableMapping):
     """A dict that stores it's items as files in a directory.
 
     """
