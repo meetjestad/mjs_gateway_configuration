@@ -84,7 +84,7 @@ def _process_hosts_simple(action, host, manifest, verbose,
     """
     if isinstance(host, str):
         hosts = [host, ]
-    elif isinstance(host, collections.Iterable):
+    elif isinstance(host, collections.abc.Iterable):
         hosts = host
     else:
         raise cdist.Error('Invalid host argument: {}'.format(host))
