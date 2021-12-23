@@ -1,2 +1,3 @@
 apt-clean
 apt-dist-upgrade
+apt-with-new-pkgs
