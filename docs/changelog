@@ -7,6 +7,7 @@ next:
 	* New type: __haproxy_dualstack (Evilham and ungleich)
 	* Type __apt_update_index: Fix complaint about suite change (Matthias Stecher)
 	* Type __package_update_index: Fix complaint about suite change (Matthias Stecher)
+	* Type __package_upgrade_all: Add new --apt-with-new-pkgs argument (Evilham)
 	* Type __apt_source: Fix complaint about suite change (Matthias Stecher)
 	* Type __package_apt: Fix complaint about suite change (Matthias Stecher)
 	* Type __debconf_set_selections: Fix bug where --file was unsupported (Evilham)
