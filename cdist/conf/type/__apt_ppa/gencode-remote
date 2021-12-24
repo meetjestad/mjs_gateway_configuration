@@ -32,6 +32,6 @@ case "$state_should" in
       echo "add-apt-repository -y '$name'"
    ;;
    absent)
-      echo "remove-apt-repository '$name'"
+      echo "add-apt-repository -r -y '$name'"
    ;;
 esac
