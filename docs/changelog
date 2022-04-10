@@ -14,6 +14,7 @@ next:
 	* Types __letsencrypt_cert, __grafana_dashboard: Improve bullseye support (Evilham)
 	* Type __ssh_authorized_key: Also remove tmpfile if removing line (Mark Verboom)
 	* Type __apt_pin: Add default priority, add comment in generated files (Daniel Fancsali)
+	* Type __file: make file uploading and attribute changes more atomic	(Steven Armstrong)
 
 6.9.8: 2021-08-24
 	* Type __rsync: Rewrite (Ander Punnar)
