@@ -1,7 +1,7 @@
 #!/bin/sh -e
 #
 # 2011-2012 Nico Schottelius (nico-cdist at schottelius.org)
-# 2013 Steven Armstrong (steven-cdist armstrong.cc)
+# 2013-2022 Steven Armstrong (steven-cdist armstrong.cc)
 #
 # This file is part of cdist.
 #
@@ -89,10 +89,26 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
       touch "$__object/files/set-attributes"
 
       # upload file to temp location
-      tempfile_template="${destination}.cdist.XXXXXXXXXX"
+      upload_destination="$(mktemp -u "${destination}.cdist.XXXXXXXXXX")"
+      # Yes, we are aware that this is a race condition.
+      # However:
+      # a) cdist usually writes to directories that are not user writable
+      #    (probably > 99.9%)
+      # b) if they are user owned, the user / attacker always wins
+      #    (probably < 0.1%)
+      # c) the only case which we could improve are tmp directories and we
+      #    don't think managing tmp directories with cdist is a typical case
+      #    ("the rest %)"
       cat << DONE
-destination_upload="\$($__remote_exec $__target_host "mktemp $tempfile_template")"
+$__remote_exec $__target_host test -e $upload_destination && {
+   echo "Refusing to upload file to existing destination: $upload_destination" >&2
+   exit 1
+}
 DONE
+      # Tell gencode-remote to where we uploaded the file so it can move
+      # it to its final destination.
+      echo "$upload_destination" > "$__object/files/upload-destination"
+
       if [ "$upload_file" ]; then
          echo upload >> "$__messages_out"
          # IPv6 fix
@@ -103,12 +119,8 @@ DONE
              my_target_host="${__target_host}"
          fi
          cat << DONE
-$__remote_copy "$source" "${my_target_host}:\$destination_upload"
+$__remote_copy "$source" "${my_target_host}:${upload_destination}"
 DONE
       fi
-# move uploaded file into place
-cat << DONE
-$__remote_exec $__target_host "rm -rf \"$destination\"; mv \"\$destination_upload\" \"$destination\""
-DONE
    fi
 fi
