@@ -72,6 +72,7 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
          if [ "$type" != "file" ]; then
             # destination is not a regular file, upload source to replace it
             upload_file=1
+            echo upload >> "$__messages_out"
          else
             local_cksum="$(cksum < "$source")"
             remote_cksum="$(cat "$__object/explorer/cksum")"
@@ -87,6 +88,14 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
       # set all attributes no matter what the explorer retreived
       mkdir "$__object/files"
       touch "$__object/files/set-attributes"
+
+      if [ "$create_file" ]; then
+         # When creating an empty file we create it locally and then
+         # upload it so that permissions can be set before moving the file
+         # into place.
+         source="$__object/files/empty"
+         touch "$source"
+      fi
 
       # upload file to temp location
       upload_destination="$(mktemp -u "/__cdist${destination}.cdist.XXXXXXXXXX" | sed 's|^/__cdist||')"
@@ -104,18 +113,15 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
       # it to its final destination.
       echo "$upload_destination" > "$__object/files/upload-destination"
 
-      if [ "$upload_file" ]; then
-         echo upload >> "$__messages_out"
-         # IPv6 fix
-         if echo "${__target_host}" | grep -q -E '^[0-9a-fA-F:]+$'
-         then
-             my_target_host="[${__target_host}]"
-         else
-             my_target_host="${__target_host}"
-         fi
-         cat << DONE
+      # IPv6 fix
+      if echo "${__target_host}" | grep -q -E '^[0-9a-fA-F:]+$'
+      then
+          my_target_host="[${__target_host}]"
+      else
+          my_target_host="${__target_host}"
+      fi
+      cat << DONE
 $__remote_copy "$source" "${my_target_host}:${upload_destination}"
 DONE
-      fi
    fi
 fi
