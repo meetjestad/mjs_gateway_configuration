@@ -99,12 +99,7 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
       # c) the only case which we could improve are tmp directories and we
       #    don't think managing tmp directories with cdist is a typical case
       #    ("the rest %)"
-      cat << DONE
-$__remote_exec $__target_host test -e $upload_destination && {
-   echo "Refusing to upload file to existing destination: $upload_destination" >&2
-   exit 1
-}
-DONE
+
       # Tell gencode-remote to where we uploaded the file so it can move
       # it to its final destination.
       echo "$upload_destination" > "$__object/files/upload-destination"
