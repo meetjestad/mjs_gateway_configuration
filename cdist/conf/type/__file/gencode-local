@@ -89,7 +89,7 @@ if [ "$state_should" = "present" ] || [ "$state_should" = "exists" ]; then
       touch "$__object/files/set-attributes"
 
       # upload file to temp location
-      upload_destination="$(mktemp -u "${destination}.cdist.XXXXXXXXXX")"
+      upload_destination="$(mktemp -u "/__cdist${destination}.cdist.XXXXXXXXXX" | sed 's|^/__cdist||')"
       # Yes, we are aware that this is a race condition.
       # However:
       # a) cdist usually writes to directories that are not user writable
