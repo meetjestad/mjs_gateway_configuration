@@ -91,7 +91,7 @@ case "$state_should" in
         if [ -f "$__object/files/upload-destination" ]; then
             # move uploaded file into place
             printf 'rm -rf "%s"\n' "$final_destination"
-            printf 'mv -T "%s" "%s"\n' "$destination" "$final_destination"
+            printf 'mv "%s" "%s"\n' "$destination" "$final_destination"
         fi
         if [ -f "$__object/files/set-attributes" ]; then
             # set-attributes is created if file is created or uploaded in gencode-local
