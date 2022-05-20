@@ -15,6 +15,7 @@ next:
 	* Type __ssh_authorized_key: Also remove tmpfile if removing line (Mark Verboom)
 	* Type __apt_pin: Add default priority, add comment in generated files (Daniel Fancsali)
 	* Type __file: make file uploading and attribute changes more atomic	(Steven Armstrong)
+	* Type __dot_file: Add support for using --file parameter (Stephan Leemburg)
 
 6.9.8: 2021-08-24
 	* Type __rsync: Rewrite (Ander Punnar)
