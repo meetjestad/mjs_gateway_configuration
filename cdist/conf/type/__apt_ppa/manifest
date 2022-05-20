@@ -20,9 +20,4 @@
 
 __package software-properties-common
 
-require="__package/software-properties-common" \
-   __file /usr/local/bin/remove-apt-repository \
-   --source "$__type/files/remove-apt-repository" \
-   --mode 0755
-
 require="$__object_name" __apt_update_index
