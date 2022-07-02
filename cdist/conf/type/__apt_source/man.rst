@@ -23,6 +23,9 @@ OPTIONAL PARAMETERS
 arch
    set this if you need to force and specific arch (ubuntu specific)
 
+signed-by
+   provide a GPG key fingerprint or keyring path for signature checks
+
 state
    'present' or 'absent', defaults to 'present'
 
@@ -55,6 +58,11 @@ EXAMPLES
     __apt_source canonical_partner \
        --uri http://archive.canonical.com/ \
        --component partner --state present
+
+    __apt_source goaccess \
+       --uri http://deb.goaccess.io/ \
+       --component main \
+       --signed-by C03B48887D5E56B046715D3297BD1A0133449C3D
 
 
 AUTHORS
