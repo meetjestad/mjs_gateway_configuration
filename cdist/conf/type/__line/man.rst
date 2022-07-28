@@ -21,12 +21,18 @@ OPTIONAL PARAMETERS
 after
     Insert the given line after this pattern.
 
+create
+    It the file does not exist then create an empty file
+
 before
     Insert the given line before this pattern.
 
 file
     If supplied, use this as the destination file.
     Otherwise the object_id is used.
+
+ifexists
+    Only apply the line if the file exists.
 
 line
     Specifies the line which should be absent or present.
