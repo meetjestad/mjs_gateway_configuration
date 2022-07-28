@@ -22,7 +22,7 @@
 set +e
 case "$("$__explorer/os")" in
    checkpoint)
-       cat /etc/cp-release|sed -e 's/.* R\([1-9][0-9]*\)\.[0-9]*$/\1/'
+       sed /etc/cp-release -e 's/.* R\([1-9][0-9]*\)\.[0-9]*$/\1/'
    ;;
    openwrt)
       # shellcheck disable=SC1091
