@@ -34,16 +34,8 @@ state_should="$(cat "$__object/parameter/state")"
 state_is="$(cat "$__object/explorer/state")"
 
 if [ -z "$state_is" ]; then
-   if [ -f "$__object/parameter/create" ]; then
-      echo "touch $file"
-   else
-      # only bark if the file should exists
-      if [ -f "$__object/parameter/ifexists" ]; then
-          exit 0
-      fi
-      printf 'The file "%s" is missing. Please create it before using %s on it.\n' "$file" "${__type##*/}" >&2
-      exit 1
-   fi
+   printf 'The file "%s" is missing. Please create it before using %s on it.\n' "$file" "${__type##*/}" >&2
+   exit 1
 fi
 
 if [ "$state_should" = "$state_is" ] || \
