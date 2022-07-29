@@ -18,6 +18,7 @@ next:
 	* Type __dot_file: Add support for using --file parameter (Stephan Leemburg)
 	* Type __apt_ppa: Replace custom "remove-apt-repository" with add-apt-repository -r (Romain Dartigues)
 	* Type __apt_source: Add signed-by parameter (Daniel Fancsali)
+	* Explorer: add support for checkpoint (Stephan Leemburg)
 
 6.9.8: 2021-08-24
 	* Type __rsync: Rewrite (Ander Punnar)
