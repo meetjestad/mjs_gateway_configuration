@@ -116,6 +116,13 @@ if [ -f /etc/slackware-version ]; then
    exit 0
 fi
 
+# Appliances
+
+if grep -q '^Check Point Gaia' /etc/cp-release 2>/dev/null; then
+    echo checkpoint
+    exit 0
+fi
+
 uname_s="$(uname -s)"
 
 # Assume there is no tr on the client -> do lower case ourselves

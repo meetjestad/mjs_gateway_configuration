@@ -41,6 +41,9 @@ in
       # empty, but well...
       cat /etc/arch-release
    ;;
+   checkpoint)
+       awk '{version=$NF; printf("%s\n", substr(version, 2))}' /etc/cp-release
+    ;;
    debian)
       debian_version=$(cat /etc/debian_version)
       case $debian_version

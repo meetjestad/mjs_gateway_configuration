@@ -34,5 +34,9 @@ elif test -f /var/run/os-release
 then
 	# FreeBSD (created by os-release service)
 	cat /var/run/os-release
+elif test -f /etc/cp-release
+then
+        # Checkpoint firewall or management (actually linux based)
+        cat /etc/cp-release
 fi
 
