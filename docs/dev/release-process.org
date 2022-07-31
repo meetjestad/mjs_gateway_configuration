@@ -1,0 +1,90 @@
+* Install requirements (Alpine)
+  - apk add py3-pycodestyle shellcheck py3-sphinx py3-sphinx_rtd_theme \
+    py3-build twine
+* Ensure your gpg setup works with the email used in the git commit!
+  - For me this is nico@nico-notebook.schottelius.org
+  - Signature / id is on nb2
+* Create ~/.pypirc
+[distutils]
+  index-servers =
+    pypi
+    cdist
+
+[pypi]
+  username = __token__
+  password = ...
+
+[cdist]
+  repository = https://upload.pypi.org/legacy/
+  username = __token__
+  password = ...
+
+* Add date in docs/changelog
+* Run ./bin/cdist-build-helper
+* TODO Move to "build"
+  - python3 -m build
+* DONE git tag: when?
+CLOSED: [2022-07-31 Sun 23:58]
+** Asked during release process: ok
+* DONE Pypi error with distutils: do not use distutils anymore
+CLOSED: [2022-07-31 Sun 23:58]
+python3 setup.py sdist upload
+...
+Creating tar archive
+removing 'cdist-7.0.0' (and everything under it)
+running upload
+Submitting dist/cdist-7.0.0.tar.gz to https://upload.pypi.org/legacy/
+Upload failed (400): Invalid value for blake2_256_digest. Error: Use a valid, hex-encoded, BLAKE2 message digest.
+error: Upload failed (400): Invalid value for blake2_256_digest. Error: Use a valid, hex-encoded, BLAKE2 message digest.
+(venv2) [22:50] nb2:cdist%
+
+* DONE Pypi error with twine: fixed in twine 4.0.1
+CLOSED: [2022-07-31 Sun 23:58]
+
+Seeing:
+
+(venv2) [22:47] nb2:cdist% twine upload dist/cdist-7.0.0*
+Uploading distributions to https://upload.pypi.org/legacy/
+Traceback (most recent call last):
+  File "/usr/bin/twine", line 8, in <module>
+    sys.exit(main())
+  File "/usr/lib/python3.10/site-packages/twine/__main__.py", line 28, in main
+    result = cli.dispatch(sys.argv[1:])
+  File "/usr/lib/python3.10/site-packages/twine/cli.py", line 68, in dispatch
+    return main(args.args)
+  File "/usr/lib/python3.10/site-packages/twine/commands/upload.py", line 197, in main
+    return upload(upload_settings, parsed_args.dists)
+  File "/usr/lib/python3.10/site-packages/twine/commands/upload.py", line 141, in upload
+    resp = repository.upload(package)
+  File "/usr/lib/python3.10/site-packages/twine/repository.py", line 189, in upload
+    resp = self._upload(package)
+  File "/usr/lib/python3.10/site-packages/twine/repository.py", line 144, in _upload
+    data = package.metadata_dictionary()
+  File "/usr/lib/python3.10/site-packages/twine/package.py", line 181, in metadata_dictionary
+    "dynamic": meta.dynamic,
+AttributeError: 'Wheel' object has no attribute 'dynamic'
+
+
+Fix:
+
+
+(venv2) [23:43] nb2:cdist% pipx run twine upload dist/*
+⚠️  twine is already on your PATH and installed at /home/nico/venv2/bin/twine. Downloading and running anyway.
+Uploading distributions to https://upload.pypi.org/legacy/
+Uploading cdist-7.0.0-py3-none-any.whl
+100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 868.6/868.6 kB • 00:04 • 221.3 kB/s
+Uploading cdist-7.0.0.tar.gz
+100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB • 00:08 • 169.3 kB/s
+
+View at:
+https://pypi.org/project/cdist/7.0.0/
+* TODO cdist web
+  - on staticweb-2022
+  - Should be moved to sftp/k8s
+
+
+  Manual steps:
+
+  ~/bin/permissions.public html/
+  rsync -a html/ staticweb.ungleich.ch:/home/services/www/nico/www.cdi.st/www/manual/7.0.0/
+  ssh staticweb.ungleich.ch "cd /home/services/www/nico/www.cdi.st/www/manual; ln -sf 7.0.0 latest"
