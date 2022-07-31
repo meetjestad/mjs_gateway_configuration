@@ -1,7 +1,7 @@
 Changelog
 ---------
 
-next:
+7.0.0: 2022-07-31
 	* Explorer machine_type: Rewrite (Dennis Camera)
 	* New type: __sed (Ander Punnar)
 	* New type: __haproxy_dualstack (Evilham and ungleich)
