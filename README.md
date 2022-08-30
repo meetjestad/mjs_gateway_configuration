@@ -77,7 +77,8 @@ Complete (re)install
 The Lorank gateway is shipped with a fairly standard Debian image with a
 LoRaWAN forwarder preinstalled. It has some scripts for updating, but
 those are a bit more complicated than we liked. Also, since then, Debian
-Stretch was released, so it makes sense to run with an updated version.
+Stretch (and now also Buster) was released, so it makes sense to run
+with an updated version.
 
 Also, starting from a clean Debian installation allows to easily restart
 from scratch if needed.
@@ -92,21 +93,23 @@ later if everything works).
 
 There are different flavours of images available, for different boards,
 based on different Debian or Ubuntu versions, through different
-websites, which makes figuring out what image to use a bit tricky. The
-default images from beagleboard.org are not suitable, since they only
-offer an lxqt flavour that includes a graphical environment, and a IoT
-flavour that includes all kinds of development tools accessible through
-the network without authentication. Rcn-ee.net offers a bunch of other
-images, among which a "console" image that seems fairly clean. The
-current stable version of Debian (buster / 10.x) is recommended, the
-versions labeled "microsd" are ready to flash onto an SD card directly.
+websites, which makes figuring out what image to use a bit tricky.
 
-The latest version of that image should be linked from [this wiki
-page][image overview], for example:
-https://rcn-ee.com/rootfs/2020-03-12/microsd/bone-debian-10.3-console-armhf-2020-03-12-2gb.img.xz
+The recommended images from beagleboard.org are not suitable, since they
+only offer an XFCE flavour that includes a graphical environment, and
+IoT flavours that includes all kinds of development tools accessible
+through the network without authentication.
 
-You can browse the files on [rcn-ee.net](http://rcn-ee.net/rootfs) to
-find newer versions.
+There is, however a "console" image that seems fairly clean and can be
+used. The current stable version of Debian (buster / 10.x) is
+recommended, the versions labeled "microsd" are ready to flash onto an
+SD card directly.
+
+
+Note that originally these console images were not published on
+beagleboard.org, but through the third-party rcn-ee.com, but since
+somewhere around 2021/2022, beagleboard.org added console images too
+(which are likely based on or even maintained by rcn).
 
 Note that console version originally used `arm.local` as the default
 hostname, rather than the `beaglebone.local` name that the
