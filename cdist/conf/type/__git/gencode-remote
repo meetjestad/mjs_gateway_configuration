@@ -19,43 +19,46 @@
 #
 #
 
-state_is="$(cat "$__object/explorer/state")"
-owner_is="$(cat "$__object/explorer/owner")"
-group_is="$(cat "$__object/explorer/group")"
+state_is=$(cat "$__object/explorer/state")
+owner_is=$(cat "$__object/explorer/owner")
+group_is=$(cat "$__object/explorer/group")
 
-state_should="$(cat "$__object/parameter/state")"
+state_should=$(cat "$__object/parameter/state")
 
-branch="$(cat "$__object/parameter/branch")"
+branch=$(cat "$__object/parameter/branch")
 
-source="$(cat "$__object/parameter/source")"
+source=$(cat "$__object/parameter/source")
 
 destination="/$__object_id"
 
-owner="$(cat "$__object/parameter/owner")"
-group="$(cat "$__object/parameter/group")"
-mode="$(cat "$__object/parameter/mode")"
+owner=$(cat "$__object/parameter/owner")
+group=$(cat "$__object/parameter/group")
+mode=$(cat "$__object/parameter/mode")
 
-[  "$state_should" = "$state_is" -a \
-   "$owner" = "$owner_is" -a \
-   "$group" = "$group_is" -a \
-   -n "$mode" ] && exit 0
+[ -f "$__object/parameter/recursive" ] && recursive='--recurse-submodules' || recursive=''
+[ -f "$__object/parameter/shallow" ] && shallow='--depth 1 --shallow-submodules' || shallow=''
+
+[ "$state_should" = "$state_is" ] \
+ && [ "$owner" = "$owner_is" ] \
+ && [ "$group" = "$group_is" ] \
+ && [ -n "$mode" ] && exit 0
 
 case $state_should in
     present)
-
         if [ "$state_should" != "$state_is" ]; then
-            echo git clone --quiet --branch "$branch" "$source" "$destination"
+            echo git clone --quiet "$recursive" "$shallow" --branch "$branch" "$source" "$destination"
         fi
-        if [ \( -n "$owner" -a "$owner_is" != "$owner" \) -o \
-             \( -n "$group" -a "$group_is" != "$group" \) ]; then
+        if { [ -n "$owner" ] && [ "$owner_is" != "$owner" ]; } || \
+           { [ -n "$group" ] && [ "$group_is" != "$group" ]; }; then
             echo chown -R "${owner}:${group}" "$destination"
         fi
         if [ -n "$mode" ]; then
             echo chmod -R "$mode" "$destination"
         fi
     ;;
-    # Handled in manifest
+
     absent)
+        # Handled in manifest
     ;;
 
     *)

@@ -5,21 +5,26 @@ import logging
 import collections
 import functools
 import cdist.configuration
+import cdist.log
+import cdist.preos
+import cdist.info
+import cdist.scan.commandline
 
 
 # set of beta sub-commands
-BETA_COMMANDS = set(('install', 'inventory', ))
+BETA_COMMANDS = set(('install', 'inventory', 'scan', ))
 # set of beta arguments for sub-commands
 BETA_ARGS = {
-    'config': set(('jobs', 'tag', 'all_tagged_hosts', 'use_archiving', )),
+    'config': set(('tag', 'all_tagged_hosts', 'use_archiving', )),
 }
-EPILOG = "Get cdist at http://www.nico.schottelius.org/software/cdist/"
+EPILOG = "Get cdist at https://code.ungleich.ch/ungleich-public/cdist"
 # Parser others can reuse
 parser = None
 
 
 _verbosity_level_off = -2
 _verbosity_level = {
+    None: logging.WARNING,
     _verbosity_level_off: logging.OFF,
     -1: logging.ERROR,
     0: logging.WARNING,
@@ -101,7 +106,7 @@ def get_parsers():
                                    name="log level"),
             help=('Set the specified verbosity level. '
                   'The levels, in order from the lowest to the highest, are: '
-                  'ERROR (-1), WARNING (0), INFO (1), VERBOSE (2), DEBUG (3) '
+                  'ERROR (-1), WARNING (0), INFO (1), VERBOSE (2), DEBUG (3), '
                   'TRACE (4 or higher). If used along with -v then -v '
                   'increases last set value and -l overwrites last set '
                   'value.'),
@@ -121,6 +126,14 @@ def get_parsers():
                   'overwrites last set value and -v increases last set '
                   'value.'),
             action='count', default=None)
+
+    parser['colored_output'] = argparse.ArgumentParser(add_help=False)
+    parser['colored_output'].add_argument(
+            '--colors', metavar='WHEN',
+            help="Colorize cdist's output based on log level; "
+                 "WHEN is 'always', 'never', or 'auto'.",
+            action='store', dest='colored_output', required=False,
+            choices=cdist.configuration.ColoredOutputOption.CHOICES)
 
     parser['beta'] = argparse.ArgumentParser(add_help=False)
     parser['beta'].add_argument(
@@ -162,6 +175,16 @@ def get_parsers():
     # Config
     parser['config_main'] = argparse.ArgumentParser(add_help=False)
     parser['config_main'].add_argument(
+           '-4', '--force-ipv4',
+           help=('Force to use IPv4 addresses only. No influence for custom'
+                 ' remote commands.'),
+           action='store_const', dest='force_ipv', const=4)
+    parser['config_main'].add_argument(
+           '-6', '--force-ipv6',
+           help=('Force to use IPv6 addresses only. No influence for custom'
+                 ' remote commands.'),
+           action='store_const', dest='force_ipv', const=6)
+    parser['config_main'].add_argument(
             '-C', '--cache-path-pattern',
             help=('Specify custom cache path pattern. If '
                   'it is not set then default hostdir is used.'),
@@ -181,16 +204,27 @@ def get_parsers():
                                   name="positive int"),
            help=('Operate in parallel in specified maximum number of jobs. '
                  'Global explorers, object prepare and object run are '
-                 'supported. Without argument CPU count is used by default. '
-                 'Currently in beta.'),
+                 'supported. Without argument CPU count is used by default. '),
            action='store', dest='jobs',
            const=multiprocessing.cpu_count())
+    parser['config_main'].add_argument(
+           '--log-server',
+           action='store_true',
+           help=('Start a log server for sub processes to use. '
+                 'This is mainly useful when running cdist nested '
+                 'from a code-local script. Log server is alwasy '
+                 'implicitly started for \'install\' command.'))
     parser['config_main'].add_argument(
            '-n', '--dry-run',
            help='Do not execute code.', action='store_true')
     parser['config_main'].add_argument(
            '-o', '--out-dir',
            help='Directory to save cdist output in.', dest="out_path")
+    parser['config_main'].add_argument(
+           '-P', '--timestamp',
+           help=('Timestamp log messages with the current local date and time '
+                 'in the format: YYYYMMDDHHMMSS.us.'),
+           action='store_true', dest='timestamp')
     parser['config_main'].add_argument(
            '-R', '--use-archiving', nargs='?',
            choices=('tar', 'tgz', 'tbz2', 'txz',),
@@ -220,19 +254,13 @@ def get_parsers():
                  '(should behave like ssh).'),
            action='store', dest='remote_exec',
            default=None)
+    parser['config_main'].add_argument(
+           '-S', '--disable-saving-output-streams',
+           help='Disable saving output streams.',
+           action='store_false', dest='save_output_streams', default=True)
 
     # Config
     parser['config_args'] = argparse.ArgumentParser(add_help=False)
-    parser['config_args'].add_argument(
-           '-4', '--force-ipv4',
-           help=('Force to use IPv4 addresses only. No influence for custom'
-                 ' remote commands.'),
-           action='store_const', dest='force_ipv', const=4)
-    parser['config_args'].add_argument(
-           '-6', '--force-ipv6',
-           help=('Force to use IPv6 addresses only. No influence for custom'
-                 ' remote commands.'),
-           action='store_const', dest='force_ipv', const=6)
     parser['config_args'].add_argument(
              '-A', '--all-tagged',
              help=('Use all hosts present in tags db. Currently in beta.'),
@@ -243,13 +271,10 @@ def get_parsers():
                    'if -t/--tag is specified.'),
              action="store_true", dest="has_all_tags", default=False)
     parser['config_args'].add_argument(
-            'host', nargs='*', help='Host(s) to operate on.')
-    parser['config_args'].add_argument(
             '-f', '--file',
             help=('Read specified file for a list of additional hosts to '
                   'operate on or if \'-\' is given, read stdin (one host per '
-                  'line). If no host or host file is specified then, by '
-                  'default, read hosts from stdin.'),
+                  'line).'),
             dest='hostfile', required=False)
     parser['config_args'].add_argument(
            '-p', '--parallel', nargs='?', metavar='HOST_MAX',
@@ -261,10 +286,6 @@ def get_parsers():
            action='store', dest='parallel',
            const=multiprocessing.cpu_count())
     parser['config_args'].add_argument(
-           '-S', '--disable-saving-output-streams',
-           help='Disable saving output streams.',
-           action='store_false', dest='save_output_streams', default=True)
-    parser['config_args'].add_argument(
            '-s', '--sequential',
            help='Operate on multiple hosts sequentially (default).',
            action='store_const', dest='parallel', const=0)
@@ -274,8 +295,11 @@ def get_parsers():
                    'list all hosts that contain any of specified tags. '
                    'Currently in beta.'),
              dest='tag', required=False, action="store_true", default=False)
+    parser['config_args'].add_argument(
+            'host', nargs='*', help='Host(s) to operate on.')
     parser['config'] = parser['sub'].add_parser(
             'config', parents=[parser['loglevel'], parser['beta'],
+                               parser['colored_output'],
                                parser['common'],
                                parser['config_main'],
                                parser['inventory_common'],
@@ -294,6 +318,7 @@ def get_parsers():
 
     parser['add-host'] = parser['invsub'].add_parser(
             'add-host', parents=[parser['loglevel'], parser['beta'],
+                                 parser['colored_output'],
                                  parser['common'],
                                  parser['inventory_common']])
     parser['add-host'].add_argument(
@@ -301,13 +326,12 @@ def get_parsers():
     parser['add-host'].add_argument(
            '-f', '--file',
            help=('Read additional hosts to add from specified file '
-                 'or from stdin if \'-\' (each host on separate line). '
-                 'If no host or host file is specified then, by default, '
-                 'read from stdin.'),
+                 'or from stdin if \'-\' (each host on separate line). '),
            dest='hostfile', required=False)
 
     parser['add-tag'] = parser['invsub'].add_parser(
             'add-tag', parents=[parser['loglevel'], parser['beta'],
+                                parser['colored_output'],
                                 parser['common'],
                                 parser['inventory_common']])
     parser['add-tag'].add_argument(
@@ -316,20 +340,12 @@ def get_parsers():
     parser['add-tag'].add_argument(
            '-f', '--file',
            help=('Read additional hosts to add tags from specified file '
-                 'or from stdin if \'-\' (each host on separate line). '
-                 'If no host or host file is specified then, by default, '
-                 'read from stdin. If no tags/tagfile nor hosts/hostfile'
-                 ' are specified then tags are read from stdin and are'
-                 ' added to all hosts.'),
+                 'or from stdin if \'-\' (each host on separate line). '),
            dest='hostfile', required=False)
     parser['add-tag'].add_argument(
            '-T', '--tag-file',
            help=('Read additional tags to add from specified file '
-                 'or from stdin if \'-\' (each tag on separate line). '
-                 'If no tag or tag file is specified then, by default, '
-                 'read from stdin. If no tags/tagfile nor hosts/hostfile'
-                 ' are specified then tags are read from stdin and are'
-                 ' added to all hosts.'),
+                 'or from stdin if \'-\' (each tag on separate line). '),
            dest='tagfile', required=False)
     parser['add-tag'].add_argument(
            '-t', '--taglist',
@@ -339,6 +355,7 @@ def get_parsers():
 
     parser['del-host'] = parser['invsub'].add_parser(
             'del-host', parents=[parser['loglevel'], parser['beta'],
+                                 parser['colored_output'],
                                  parser['common'],
                                  parser['inventory_common']])
     parser['del-host'].add_argument(
@@ -349,13 +366,12 @@ def get_parsers():
     parser['del-host'].add_argument(
             '-f', '--file',
             help=('Read additional hosts to delete from specified file '
-                  'or from stdin if \'-\' (each host on separate line). '
-                  'If no host or host file is specified then, by default, '
-                  'read from stdin.'),
+                  'or from stdin if \'-\' (each host on separate line). '),
             dest='hostfile', required=False)
 
     parser['del-tag'] = parser['invsub'].add_parser(
             'del-tag', parents=[parser['loglevel'], parser['beta'],
+                                parser['colored_output'],
                                 parser['common'],
                                 parser['inventory_common']])
     parser['del-tag'].add_argument(
@@ -368,20 +384,13 @@ def get_parsers():
     parser['del-tag'].add_argument(
             '-f', '--file',
             help=('Read additional hosts to delete tags for from specified '
-                  'file or from stdin if \'-\' (each host on separate line). '
-                  'If no host or host file is specified then, by default, '
-                  'read from stdin. If no tags/tagfile nor hosts/hostfile'
-                  ' are specified then tags are read from stdin and are'
-                  ' deleted from all hosts.'),
+                  'file or from stdin if \'-\' (each host on separate '
+                  'line). '),
             dest='hostfile', required=False)
     parser['del-tag'].add_argument(
             '-T', '--tag-file',
             help=('Read additional tags from specified file '
-                  'or from stdin if \'-\' (each tag on separate line). '
-                  'If no tag or tag file is specified then, by default, '
-                  'read from stdin. If no tags/tagfile nor'
-                  ' hosts/hostfile are specified then tags are read from'
-                  ' stdin and are added to all hosts.'),
+                  'or from stdin if \'-\' (each tag on separate line). '),
             dest='tagfile', required=False)
     parser['del-tag'].add_argument(
             '-t', '--taglist',
@@ -391,6 +400,7 @@ def get_parsers():
 
     parser['list'] = parser['invsub'].add_parser(
             'list', parents=[parser['loglevel'], parser['beta'],
+                             parser['colored_output'],
                              parser['common'],
                              parser['inventory_common']])
     parser['list'].add_argument(
@@ -418,14 +428,89 @@ def get_parsers():
     parser['inventory'].set_defaults(
             func=cdist.inventory.Inventory.commandline)
 
+    # PreOS
+    parser['preos'] = parser['sub'].add_parser('preos', add_help=False)
+
     # Shell
     parser['shell'] = parser['sub'].add_parser(
-            'shell', parents=[parser['loglevel']])
+            'shell', parents=[parser['loglevel'], parser['colored_output']])
     parser['shell'].add_argument(
             '-s', '--shell',
             help=('Select shell to use, defaults to current shell. Used shell'
                   ' should be POSIX compatible shell.'))
     parser['shell'].set_defaults(func=cdist.shell.Shell.commandline)
+
+    # Info
+    parser['info'] = parser['sub'].add_parser('info')
+    parser['info'].add_argument(
+            '-a', '--all', help='Display all info. This is the default.',
+            action='store_true', default=False)
+    parser['info'].add_argument(
+            '-c', '--conf-dir',
+            help='Add configuration directory (can be repeated).',
+            action='append')
+    parser['info'].add_argument(
+            '-e', '--global-explorers',
+            help='Display info for global explorers.', action='store_true',
+            default=False)
+    parser['info'].add_argument(
+            '-F', '--fixed-string',
+            help='Interpret pattern as a fixed string.', action='store_true',
+            default=False)
+    parser['info'].add_argument(
+            '-f', '--full', help='Display full details.',
+            action='store_true', default=False)
+    parser['info'].add_argument(
+           '-g', '--config-file',
+           help='Use specified custom configuration file.',
+           dest="config_file", required=False)
+    parser['info'].add_argument(
+            '-t', '--types', help='Display info for types.',
+            action='store_true', default=False)
+    parser['info'].add_argument(
+            'pattern', nargs='?', help='Glob pattern.')
+    parser['info'].set_defaults(func=cdist.info.Info.commandline)
+
+    # Scan = config + further
+    parser['scan'] = parser['sub'].add_parser('scan', add_help=False,
+                                              parents=[parser['config']])
+
+    parser['scan'] = parser['sub'].add_parser(
+            'scan', parents=[parser['loglevel'],
+                             parser['beta'],
+                             parser['colored_output'],
+                             parser['common'],
+                             parser['config_main']])
+
+    parser['scan'].add_argument(
+        '-m', '--mode', help='Which modes should run',
+        action='append', default=[],
+        choices=['scan', 'trigger', 'config'])
+    parser['scan'].add_argument(
+        '--list',
+        action='store_true',
+        help='List the known hosts and exit')
+    parser['scan'].add_argument(
+        '--config',
+        action='store_true',
+        help='Try to configure detected hosts')
+    parser['scan'].add_argument(
+        '-I', '--interface',
+        action='append',  default=[], required=True,
+        help='On which interfaces to scan/trigger')
+    parser['scan'].add_argument(
+        '--name-mapper',
+        action='store',  default=None,
+        help='Map addresses to names, required for config mode')
+    parser['scan'].add_argument(
+        '-d', '--config-delay',
+        action='store',  default=3600, type=int,
+        help='How long (seconds) to wait before reconfiguring after last try')
+    parser['scan'].add_argument(
+        '-t', '--trigger-delay',
+        action='store',  default=5, type=int,
+        help='How long (seconds) to wait between ICMPv6 echo requests')
+    parser['scan'].set_defaults(func=cdist.scan.commandline.commandline)
 
     for p in parser:
         parser[p].epilog = EPILOG
@@ -437,7 +522,12 @@ def handle_loglevel(args):
     if hasattr(args, 'quiet') and args.quiet:
         args.verbose = _verbosity_level_off
 
-    logging.root.setLevel(_verbosity_level[args.verbose])
+    logging.getLogger().setLevel(_verbosity_level[args.verbose])
+
+
+def handle_log_colors(args):
+    if cdist.configuration.ColoredOutputOption.translate(args.colored_output):
+        cdist.log.CdistFormatter.USE_COLORS = True
 
 
 def parse_and_configure(argv, singleton=True):
@@ -451,13 +541,14 @@ def parse_and_configure(argv, singleton=True):
         raise cdist.Error(str(e))
     # Loglevels are handled globally in here
     handle_loglevel(args)
+    handle_log_colors(args)
 
     log = logging.getLogger("cdist")
 
-    log.verbose("version %s" % cdist.VERSION)
-    log.trace('command line args: {}'.format(cfg.command_line_args))
-    log.trace('configuration: {}'.format(cfg.get_config()))
-    log.trace('configured args: {}'.format(args))
+    log.verbose("version %s", cdist.VERSION)
+    log.trace('command line args: %s', cfg.command_line_args)
+    log.trace('configuration: %s', cfg.get_config())
+    log.trace('configured args: %s', args)
 
     check_beta(vars(args))
 

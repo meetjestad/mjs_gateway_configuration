@@ -18,13 +18,29 @@ source
    Specifies the link source.
 
 type
-   Specifies the link type: Either hard or symoblic.
+   Specifies the link type: Either hard or symbolic.
 
 
 OPTIONAL PARAMETERS
 -------------------
 state
    'present' or 'absent', defaults to 'present'
+
+
+MESSAGES
+--------
+
+created <destination>
+   Link to destination was created.
+
+removed <destination>
+   Link to destination was removed.
+
+removed <destination> (directory)
+   Destination was removed because state is ``present`` and destination was directory.
+
+removed <destination> (wrongsource)
+   Destination was removed because state is ``present`` and destination link source was wrong.
 
 
 EXAMPLES

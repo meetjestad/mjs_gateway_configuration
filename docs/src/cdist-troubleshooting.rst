@@ -43,3 +43,22 @@ you write to use the -e flag:
     % cat ~/.cdist/manifest/special
     #!/bin/sh -e
     ...
+
+Using debug dump helper script
+------------------------------
+Since cdist stores data to local cache that can be used for debugging there
+is a helper script that dumps data from local cache,
+`cdist-dump <man1/cdist-dump.html>`_.
+
+For more info see:
+
+.. code-block:: sh
+
+    cdist-dump -h
+
+Or from cdist git cloned directory:
+
+.. code-block:: sh
+
+    ./scripts/cdist-dump -h
+

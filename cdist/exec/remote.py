@@ -24,12 +24,10 @@ import os
 import glob
 import subprocess
 import logging
-import multiprocessing
 
 import cdist
 import cdist.exec.util as util
 import cdist.util.ipaddr as ipaddr
-from cdist.mputil import mp_pool_run
 
 
 def _wrap_addr(addr):
@@ -49,7 +47,7 @@ class DecodeError(cdist.Error):
         return "Cannot decode output of " + " ".join(self.command)
 
 
-class Remote(object):
+class Remote:
     """Execute commands remotely.
 
     All interaction with the remote side should be done through this class.
@@ -176,21 +174,21 @@ class Remote(object):
                 # create archive
                 tarpath, fcnt = autil.tar(source, self.archiving_mode)
                 if tarpath is None:
-                    self.log.trace(("Files count {} is lower than {} limit, "
-                                    "skipping archiving").format(
-                                        fcnt, autil.FILES_LIMIT))
+                    self.log.trace("Files count %d is lower than %d limit, "
+                                   "skipping archiving",
+                                   fcnt, autil.FILES_LIMIT)
                 else:
-                    self.log.trace(("Archiving mode, tarpath: %s, file count: "
-                                    "%s"), tarpath, fcnt)
+                    self.log.trace("Archiving mode, tarpath: %s, file count: "
+                                   "%s", tarpath, fcnt)
                     # get archive name
                     tarname = os.path.basename(tarpath)
                     self.log.trace("Archiving mode tarname: %s", tarname)
                     # archive path at the remote
                     desttarpath = os.path.join(destination, tarname)
-                    self.log.trace(
-                        "Archiving mode desttarpath: %s", desttarpath)
+                    self.log.trace("Archiving mode desttarpath: %s",
+                                   desttarpath)
                     # transfer archive to the remote side
-                    self.log.trace("Archiving mode: transfering")
+                    self.log.trace("Archiving mode: transferring")
                     self._transfer_file(tarpath, desttarpath)
                     # extract archive at the remote
                     self.log.trace("Archiving mode: extracting")
@@ -203,46 +201,20 @@ class Remote(object):
                     os.remove(tarpath)
                     used_archiving = True
             if not used_archiving:
-                if jobs:
-                    self._transfer_dir_parallel(source, destination, jobs)
-                else:
-                    self._transfer_dir_sequential(source, destination)
+                self._transfer_dir(source, destination)
         elif jobs:
             raise cdist.Error("Source {} is not a directory".format(source))
         else:
             self._transfer_file(source, destination)
 
-    def _transfer_dir_commands(self, source, destination):
+    def _transfer_dir(self, source, destination):
+        command = self._copy.split()
         for f in glob.glob1(source, '*'):
-            command = self._copy.split()
             path = os.path.join(source, f)
-            command.extend([path, '{0}:{1}'.format(
-                _wrap_addr(self.target_host[0]), destination)])
-            yield command
-
-    def _transfer_dir_sequential(self, source, destination):
-        for command in self._transfer_dir_commands(source, destination):
-            self._run_command(command)
-
-    def _transfer_dir_parallel(self, source, destination, jobs):
-        """Transfer a directory to the remote side in parallel mode."""
-        self.log.debug("Remote transfer in {} parallel jobs".format(
-            jobs))
-        self.log.trace("Multiprocessing start method is {}".format(
-            multiprocessing.get_start_method()))
-        self.log.trace(("Starting multiprocessing Pool for parallel "
-                        "remote transfer"))
-        args = [
-            (command, )
-            for command in self._transfer_dir_commands(source, destination)
-        ]
-        if len(args) == 1:
-            self.log.debug("Only one dir entry, transfering sequentially")
-            self._run_command(args[0])
-        else:
-            mp_pool_run(self._run_command, args, jobs=jobs)
-        self.log.trace(("Multiprocessing for parallel transfer "
-                        "finished"))
+            command.extend([path])
+        command.extend(['{0}:{1}'.format(
+            _wrap_addr(self.target_host[0]), destination)])
+        self._run_command(command)
 
     def run_script(self, script, env=None, return_output=False, stdout=None,
                    stderr=None):
@@ -274,23 +246,24 @@ class Remote(object):
         # variable declarations
 
         # cdist command prepended with variable assignments expects
-        # posix shell (bourne, bash) at the remote as user default shell.
-        # If remote user shell isn't poxis shell, but for e.g. csh/tcsh
+        # POSIX shell (bourne, bash) at the remote as user default shell.
+        # If remote user shell isn't POSIX shell, but for e.g. csh/tcsh
         # then these var assignments are not var assignments for this
         # remote shell, it tries to execute it as a command and fails.
         # So really do this by default:
         # /bin/sh -c 'export <var assignments>; command'
         # so that constructed remote command isn't dependent on remote
         # shell. Do this only if env is not None. env breaks this.
-        # Explicitly use /bin/sh, because var assignments assume poxis
+        # Explicitly use /bin/sh, because var assignments assume POSIX
         # shell already.
         # This leaves the posibility to write script that needs to be run
         # remotely in e.g. csh and setting up CDIST_REMOTE_SHELL to e.g.
         # /bin/csh will execute this script in the right way.
         if env:
-            remote_env = [" export %s=%s;" % item for item in env.items()]
-            string_cmd = ("/bin/sh -c '" + " ".join(remote_env) +
-                          " ".join(command) + "'")
+            remote_env = [" export {env[0]}={env[1]};".format(env=item)
+                          for item in env.items()]
+            string_cmd = ("/bin/sh -c '{}{}'").format(" ".join(remote_env),
+                                                      " ".join(command))
             cmd.append(string_cmd)
         else:
             cmd.extend(command)
@@ -304,10 +277,7 @@ class Remote(object):
 
         """
         assert isinstance(command, (list, tuple)), (
-                "list or tuple argument expected, got: %s" % command)
-
-        if return_output and stdout is not subprocess.PIPE:
-            self.log.debug("return_output is True, ignoring stdout")
+                "list or tuple argument expected, got: {}".format(command))
 
         close_stdout = False
         close_stderr = False
@@ -330,6 +300,7 @@ class Remote(object):
         try:
             if self.quiet_mode:
                 stderr = subprocess.DEVNULL
+                close_stderr = False
             if return_output:
                 output = subprocess.check_output(command, env=os_environ,
                                                  stderr=stderr).decode()

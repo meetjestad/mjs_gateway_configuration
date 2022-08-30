@@ -92,12 +92,12 @@ code-remote
 '''
 
 
-class Code(object):
+class Code:
     """Generates and executes cdist code scripts.
 
     """
     # target_host is tuple (target_host, target_hostname, target_fqdn)
-    def __init__(self, target_host, local, remote):
+    def __init__(self, target_host, local, remote, dry_run=False):
         self.target_host = target_host
         self.local = local
         self.remote = remote
@@ -113,10 +113,17 @@ class Code(object):
                 local.log),
         }
 
+        if dry_run:
+            self.env['__cdist_dry_run'] = '1'
+
+        if '__cdist_log_server_socket_export' in os.environ:
+            self.env['__cdist_log_server_socket'] = os.environ[
+                '__cdist_log_server_socket_export']
+
     def _run_gencode(self, cdist_object, which):
         cdist_type = cdist_object.cdist_type
-        script = os.path.join(self.local.type_path,
-                              getattr(cdist_type, 'gencode_%s_path' % which))
+        gencode_attr = getattr(cdist_type, 'gencode_{}_path'.format(which))
+        script = os.path.join(self.local.type_path, gencode_attr)
         if os.path.isfile(script):
             env = os.environ.copy()
             env.update(self.env)
@@ -160,8 +167,8 @@ class Code(object):
 
     def _run_code(self, cdist_object, which, env=None):
         which_exec = getattr(self, which)
-        script = os.path.join(which_exec.object_path,
-                              getattr(cdist_object, 'code_%s_path' % which))
+        code_attr = getattr(cdist_object, 'code_{}_path'.format(which))
+        script = os.path.join(which_exec.object_path, code_attr)
         if which_exec.save_output_streams:
             stderr_path = os.path.join(cdist_object.stderr_path,
                                        'code-' + which)

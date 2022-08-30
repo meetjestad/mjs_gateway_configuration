@@ -38,13 +38,13 @@ fi
 pkg_version="$(cat "$__object/explorer/pkg_version")"
 if [ -z "$pkg_version" ]; then
     state_is="absent"
-elif [ -z "$version" -a $(echo "$pkg_version" | wc -l) -gt 1 ]; then
-    echo "Package name is not unique! The following packages are installed:"
-    echo "$pkg_version"
+elif [ -z "$version" ] && [ "$(echo "$pkg_version" | wc -l)" -gt 1 ]; then
+    echo "Package name is not unique! The following packages are installed:" >&2
+    echo "$pkg_version" >&2
     exit 1
-elif [ -n "$version" -a $(echo "$pkg_version" | cut -d " " -f 1 | sort | uniq | wc -l) -gt 1 ]; then
-    echo "Package name is not unique! The following packages are installed:"
-    echo "$pkg_version"
+elif [ -n "$version" ] && [ "$(echo "$pkg_version" | cut -d " " -f 1 | sort | uniq | wc -l)" -gt 1 ]; then
+    echo "Package name is not unique! The following packages are installed:" >&2
+    echo "$pkg_version" >&2
     exit 1
 else
     state_is="present"
@@ -57,16 +57,18 @@ fi
 
 
 # Exit if nothing is needed to be done
-[ "$state_is" = "$state_should" ] && ( [ -z "$version" ] || [ "$installed_version" = "$version" ] ) && exit 0
-[ "$state_should" = "absent" ] && [ ! -z "$version" ] && [ "$installed_version" != "$version" ] && exit 0
+[ "$state_is" = "$state_should" ] && { [ -z "$version" ] || [ "$installed_version" = "$version" ]; } && exit 0
+[ "$state_should" = "absent" ] && [ -n "$version" ] && [ "$installed_version" != "$version" ] && exit 0
 
 
 case "$state_should" in
    present)
-        echo "emerge \"$name\" &>/dev/null || exit 1"
+        echo "emerge '$name' &>/dev/null || exit 1"
+        echo "installed" >> "$__messages_out"
         ;;
    absent)
-        echo "emerge -C \"$name\" &>/dev/null || exit 1"
+        echo "emerge -C '$name' &>/dev/null || exit 1"
+        echo "removed" >> "$__messages_out"
         ;;
    *)
         echo "Unknown state: $state_should" >&2

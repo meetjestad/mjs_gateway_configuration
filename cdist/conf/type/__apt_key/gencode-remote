@@ -25,18 +25,75 @@ else
 fi
 state_should="$(cat "$__object/parameter/state")"
 state_is="$(cat "$__object/explorer/state")"
+method="$(cat "$__object/key_method")"
 
-if [ "$state_should" = "$state_is" ]; then
-   # nothing to do
-   exit 0
-fi
+keydir="$(cat "$__object/parameter/keydir")"
+keyfile="$keydir/$__object_id.gpg"
 
 case "$state_should" in
    present)
       keyserver="$(cat "$__object/parameter/keyserver")"
-      echo "apt-key adv --keyserver \"$keyserver\" --recv-keys \"$keyid\""
+      # Using __download or __file as key source
+      # Propagate messages if needed
+      if [ "${method}" = "uri" ] || [ "${method}" = "source" ]; then
+         if grep -Eq "^__(file|download)$keyfile" "$__messages_in"; then
+            echo "added '$keyid'" >> "$__messages_out"
+         fi
+         exit 0
+      elif [ "${state_is}" = "present" ]; then
+         exit 0
+      fi
+      # Using key servers to fetch the key
+      if [ ! -f "$__object/parameter/use-deprecated-apt-key" ]; then
+         # we need to kill gpg after 30 seconds, because gpg
+         # can get stuck if keyserver is not responding.
+         # exporting env var and not exit 1,
+         # because we need to clean up and kill dirmngr.
+         cat << EOF
+
+gpgtmphome="\$( mktemp -d )"
+
+if timeout 30s \\
+    gpg --homedir "\$gpgtmphome" \\
+        --keyserver "$keyserver" \\
+        --recv-keys "$keyid"
+then
+    gpg --homedir "\$gpgtmphome" \\
+        --export "$keyid" \\
+        > "$keyfile"
+else
+    export GPG_GOT_STUCK=1
+fi
+
+GNUPGHOME="\$gpgtmphome" gpgconf --kill dirmngr
+
+rm -rf "\$gpgtmphome"
+
+if [ -n "\$GPG_GOT_STUCK" ]
+then
+    echo "GPG GOT STUCK - no response from keyserver after 30 seconds" >&2
+    exit 1
+fi
+
+EOF
+      else
+         # fallback to deprecated apt-key
+         echo "apt-key adv --keyserver \"$keyserver\" --recv-keys \"$keyid\""
+      fi
+
+      echo "added '$keyid'" >> "$__messages_out"
    ;;
    absent)
-      echo "apt-key del \"$keyid\""
+      # Removal for keys added from a keyserver without this flag
+      # is done in the manifest
+      if [ "$state_is" != "absent" ] && \
+            [ -f "$__object/parameter/use-deprecated-apt-key" ]; then
+         # fallback to deprecated apt-key
+         echo "apt-key del \"$keyid\""
+         echo "removed '$keyid'" >> "$__messages_out"
+      # Propagate messages if needed
+      elif grep -Eq "^__file$keyfile" "$__messages_in"; then
+         echo "removed '$keyid'" >> "$__messages_out"
+      fi
    ;;
 esac

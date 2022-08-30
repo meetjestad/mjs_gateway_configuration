@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # 2017 Darko Poljak (darko.poljak at gmail.com)
@@ -55,13 +54,12 @@ _mydir = os.path.dirname(__file__)
 def find_cdist_exec():
     """Search cdist executable starting from local lib directory.
 
-    Detect if ../scripts/cdist (from local lib direcotry) exists and
+    Detect if ../bin/cdist (from local lib directory) exists and
     if it is executable. If not then try to find cdist exec path in
     os.get_exec_path() entries. If no cdist path is found rasie
     cdist.Error.
     """
-    cdist_path = os.path.abspath(os.path.join(_mydir, '..', 'scripts',
-                                              'cdist'))
+    cdist_path = os.path.abspath(os.path.join(_mydir, '..', 'bin', 'cdist'))
     if os.access(cdist_path, os.X_OK):
         return cdist_path
     cdist_path = find_cdist_exec_in_path()
@@ -86,7 +84,7 @@ def _process_hosts_simple(action, host, manifest, verbose,
     """
     if isinstance(host, str):
         hosts = [host, ]
-    elif isinstance(host, collections.Iterable):
+    elif isinstance(host, collections.abc.Iterable):
         hosts = host
     else:
         raise cdist.Error('Invalid host argument: {}'.format(host))

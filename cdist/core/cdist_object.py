@@ -34,20 +34,20 @@ class IllegalObjectIdError(cdist.Error):
         self.message = message or 'Illegal object id'
 
     def __str__(self):
-        return '%s: %s' % (self.message, self.object_id)
+        return '{}: {}'.format(self.message, self.object_id)
 
 
 class MissingObjectIdError(cdist.Error):
     def __init__(self, type_name):
         self.type_name = type_name
-        self.message = ("Type %s requires object id (is not a "
-                        "singleton type)") % self.type_name
+        self.message = ("Type {} requires object id (is not a "
+                        "singleton type)").format(self.type_name)
 
     def __str__(self):
-        return '%s' % (self.message)
+        return '{}'.format(self.message)
 
 
-class CdistObject(object):
+class CdistObject:
     """Represents a cdist object.
 
     All interaction with objects in cdist should be done through this class.
@@ -108,7 +108,9 @@ class CdistObject(object):
 
     @staticmethod
     def split_name(object_name):
-        """split_name('__type_name/the/object_id') -> ('__type_name', 'the/object_id')
+        """split_name('__type_name/the/object_id')
+           ->
+           ('__type_name', 'the/object_id')
 
         Split the given object name into it's type and object_id parts.
 
@@ -119,7 +121,9 @@ class CdistObject(object):
 
     @staticmethod
     def join_name(type_name, object_id):
-        """join_name('__type_name', 'the/object_id') -> __type_name/the/object_id'
+        """join_name('__type_name', 'the/object_id')
+           ->
+           __type_name/the/object_id'
 
         Join the given type_name and object_id into an object name.
 
@@ -138,7 +142,7 @@ class CdistObject(object):
             if self.object_marker in self.object_id.split(os.sep):
                 raise IllegalObjectIdError(
                         self.object_id, ('object_id may not contain '
-                                         '\'%s\'') % self.object_marker)
+                                         '\'{}\'').format(self.object_marker))
             if '//' in self.object_id:
                 raise IllegalObjectIdError(
                         self.object_id, 'object_id may not contain //')
@@ -162,7 +166,8 @@ class CdistObject(object):
         # (parameters: %s)" % (self.cdist_type.name, self.parameters))
 
     def object_from_name(self, object_name):
-        """Convenience method for creating an object instance from an object name.
+        """Convenience method for creating an object instance from an object
+        name.
 
         Mainly intended to create objects when resolving requirements.
 
@@ -184,7 +189,7 @@ class CdistObject(object):
                               object_id=object_id)
 
     def __repr__(self):
-        return '<CdistObject %s>' % self.name
+        return '<CdistObject {}>'.format(self.name)
 
     def __eq__(self, other):
         """define equality as 'name is the same'"""
@@ -238,6 +243,23 @@ class CdistObject(object):
             lambda obj: os.path.join(obj.base_path, obj.code_local_path))
     code_remote = fsproperty.FileStringProperty(
             lambda obj: os.path.join(obj.base_path, obj.code_remote_path))
+    typeorder = fsproperty.FileListProperty(
+            lambda obj: os.path.join(obj.absolute_path, 'typeorder'))
+    typeorder_dep = fsproperty.FileListProperty(
+            lambda obj: os.path.join(obj.absolute_path, 'typeorder_dep'))
+    # objects without parents are objects specified in init manifest
+    parents = fsproperty.FileListProperty(
+            lambda obj: os.path.join(obj.absolute_path, 'parents'))
+    # objects without children are object of types that do not reuse other
+    # types
+    children = fsproperty.FileListProperty(
+            lambda obj: os.path.join(obj.absolute_path, 'children'))
+
+    def cleanup(self):
+        try:
+            os.remove(os.path.join(self.absolute_path, 'typeorder_dep'))
+        except FileNotFoundError:
+            pass
 
     @property
     def exists(self):
@@ -255,10 +277,10 @@ class CdistObject(object):
                 os.makedirs(path, exist_ok=allow_overwrite)
         except EnvironmentError as error:
             raise cdist.Error(('Error creating directories for cdist object: '
-                               '%s: %s') % (self, error))
+                               '{}: {}').format(self, error))
 
     def requirements_unfinished(self, requirements):
-        """Return state whether requirements are satisfied"""
+        """Return unsatisfied requirements"""
 
         object_list = []
 
@@ -269,3 +291,14 @@ class CdistObject(object):
                 object_list.append(cdist_object)
 
         return object_list
+
+    def has_requirements_unfinished(self, requirements):
+        """Return whether requirements are satisfied"""
+
+        for requirement in requirements:
+            cdist_object = self.object_from_name(requirement)
+
+            if cdist_object.state != self.STATE_DONE:
+                return True
+
+        return False

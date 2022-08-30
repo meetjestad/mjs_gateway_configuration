@@ -1,6 +1,427 @@
 Changelog
 ---------
 
+7.0.0: 2022-07-31
+	* Explorer machine_type: Rewrite (Dennis Camera)
+	* New type: __sed (Ander Punnar)
+	* New type: __haproxy_dualstack (Evilham and ungleich)
+	* Type __apt_update_index: Fix complaint about suite change (Matthias Stecher)
+	* Type __package_update_index: Fix complaint about suite change (Matthias Stecher)
+	* Type __package_upgrade_all: Add new --apt-with-new-pkgs argument (Evilham)
+	* Type __apt_source: Fix complaint about suite change (Matthias Stecher)
+	* Type __package_apt: Fix complaint about suite change (Matthias Stecher)
+	* Type __debconf_set_selections: Fix bug where --file was unsupported (Evilham)
+	* Types __letsencrypt_cert, __grafana_dashboard: Improve bullseye support (Evilham)
+	* Type __ssh_authorized_key: Also remove tmpfile if removing line (Mark Verboom)
+	* Type __apt_pin: Add default priority, add comment in generated files (Daniel Fancsali)
+	* Type __file: make file uploading and attribute changes more atomic	(Steven Armstrong)
+	* Type __dot_file: Add support for using --file parameter (Stephan Leemburg)
+	* Type __apt_ppa: Replace custom "remove-apt-repository" with add-apt-repository -r (Romain Dartigues)
+	* Type __apt_source: Add signed-by parameter (Daniel Fancsali)
+	* Explorer: add support for checkpoint (Stephan Leemburg)
+
+6.9.8: 2021-08-24
+	* Type __rsync: Rewrite (Ander Punnar)
+	* New type: __apt_pin (Daniel Fancsali)
+	* Explorer os_version: Convert Devuan ceres to version number (Dennis Camera)
+	* Core: Fix logging bug (Dennis Camera)
+	* Build: Improve Makefile compatibility (Evilham)
+	* Type __filesystem: Support ubuntu (Joachim Desroches)
+	* Explorer os_version: Fall back to os-release/lsb-release file on Ubuntu (Dennis Camera)
+	* Explorer memory: Fix conversion of large numbers (>= 2GiB) (Dennis Camera)
+	* Type __update_alternatives: Fix dry run and non-English systems (Dennis Camera)
+	* Explorer os_version: Fix for FreeBSD < 10.0 and for legacy Mac OS X versions (Dennis Camera)
+	* Explorer os_version: Add bookworm and trixie debian code names, fallback to 99.99 for unknown code name in sid (Ander Punnar)
+
+6.9.7: 2021-07-10
+	* New type: __postgres_conf (Beni Ruef, Dennis Camera)
+	* Types __postgres_*: Improve OS support and do some cleanup (Dennis Camera)
+	* Type __apt_key_uri: Deprecate in favour of __apt_key --uri (Evilham)
+	* Type __apt_key: Documentation improvements, support in-type/in-manifest provision with --source, make fallback to apt-key(8) explicit with --use-deprecated-apt-key (Evilham)
+	* Type __letsencrypt_cert: Bugfix, performance; revamp explorers, add locking (Evilham)
+	* Type __git: Fix group explorer (Ander Punnar)
+	* Type __pyvenv: Fix group explorer (Dennis Camera)
+	* Type __download: Improve checksum verification, add optional --destination (Ander Punnar)
+	* Type __debconf_set_selections: Add state explorer (Dennis Camera)
+	* Core: Implement usable cdist scan (Timothée Floure)
+	* New type: __snakeoil_cert (Ander Punnar)
+	* Type __rsync: Honour $__remote_exec env var (Daniel Fancsali)
+
+6.9.6: 2021-04-20
+	* Type __pyvenv: Fix user example in man page (Dennis Camera)
+	* Core: config: Make local state directory available to custom remotes (Steven Armstrong
+	* Type __ssh_authorized_key: grep only if file exists (Dennis Camera)
+	* Type __sshd_config: Whitelist OpenBMC (Dennis Camera)
+	* Core: Maintain object relationship graph in cdist cache (Darko Poljak)
+	* Type __git: Fix numeric owner and group handling (Dennis Camera)
+	* Type __pyvenv: Fix numeric owner and group handling (Dennis Camera)
+	* Type __download: Make sum parameter optional (Ander Punnar)
+
+6.9.5: 2021-02-28
+	* Core: preos: Fix passing cdist debug parameter (Darko Poljak)
+	* Type __sshd_config: Produce error if invalid config is generated, fix processing of AuthenticationMethods and AuthorizedKeysFile, document explorer bug (Dennis Camera)
+	* Explorer memory: Fix result units; support Solaris (Dennis Camera)
+	* Type __postgres_role: Implement modification of roles (Dennis Camera)
+	* Type __letsencrypt_cert: Fix issues with hooks (Evil Ham)
+	* Type __package_pip: Add optional extra dependencies param (Matthias Stecher)
+
+6.9.4: 2020-12-21
+	* Type __package_pkgng_freebsd: Fix bootstrapping pkg (Dennis Camera)
+	* Core: Deal with deprecated imp in unit tests (Evil Ham)
+	* Type __iptables: Add IPv6 support (Matthias Stecher)
+	* Type __block: Fix escaping in here-doc (Matthias Stecher)
+	* Explorer os_version: Improve FreeBSD support (Evil Ham)
+	* New type: __apt_backports (Matthias Stecher)
+	* Type __dot_file: Add dirmode parameter (Mark Verboom)
+
+6.9.3: 2020-12-04
+	* pip install: Add cdist.scan to packages in setup.py (Dennis Camera)
+
+6.9.2: 2020-11-20
+	* Documentation: Fix examples in best practice (Dennis Camera)
+	* Type __locale: Add state explorer (Matthias Stecher)
+	* Core: Reorganize scripts, version generation (Ander Punnar, Dennis Camera)
+	* New type: __hwclock (Dennis Camera)
+	* Type __hostname: Fix guessing SuSE OS version (Dennis Camera)
+	* New type: __sshd_config (Dennis Camera)
+	* New type: __localedef (Dennis Camera)
+	* Type __locale: Deprecate in favor of __localedef (Dennis Camera)
+
+6.9.1: 2020-11-08
+	* Type __file: Fix state pre-exists (Dennis Camera)
+	* Type __hostname: Add support for OpenWrt (Dennis Camera)
+	* New type: __dpkg_architecture (Matthias Stecher)
+	* Type __package_apt: Add --install-recommends parameter (Matthias Stecher)
+
+6.9.0: 2020-11-07
+	* Core: Clarify stdin input (Darko Poljak)
+	* Type __package_pip: Detect pip binary (Ander Punnar)
+	* Documentation: Add custom remote copy/exec examples (Darko Poljak)
+	* Type __package_pkgng_freebsd: Bootstrap pkg if necessary (Evil Ham)
+	* Type __service: Fix calling __systemd_service (Mark Verboom)
+	* Type __line: Add 'replace' state (Evil Ham)
+	* Type __download: Fix man page (Matthias Stecher)
+	* Type __acl: Remove deprecated parameters, fix bugs (Ander Punnar)
+	* Type __update_alternatives: Rewrite, support --install (Ander Punnar)
+	* Type __file: Fix state pre-exists (Dennis Camera)
+	* Type __apt_norecommends: Use 00InstallRecommends file as debian-installer does (Dennis Camera)
+	* New types: __uci, __uci_section (Dennis Camera)
+	* Core: Introduce scanner (noninvasive, beta) (Nico Schottelius)
+
+6.8.0: 2020-09-11
+	* Type __locale_system: Fix for debian and ubuntu (Ander Punnar)
+	* Type __unpack: Add --tar-extra-args parameter (Ander Punnar)
+	* Explorer os: Fix OS detection for openSUSE (Dennis Camera)
+	* Type __filesystem: Support Alpine Linux (Joachim Desroches)
+	* Type __locale_system: Fix version comparison (Dennis Camera)
+	* Type __unpack: Add --onchange parameter (Ander Punnar)
+	* Type __download: Fix manual (Ander Punnar)
+	* Explorer os_version: Convert Debian sid to version number (Dennis Camera)
+	* Core: Expand require delimiter characters, split by consecutive delimiters (Darko Poljak)
+	* Type __timezone: Make singleton (Dennis Camera)
+	* Type __systemd_service: Fix manpage typos (Matthias Stecher)
+
+6.7.0: 2020-07-28
+	* Delete deprecated type: __pf_apply (Darko Poljak)
+	* New type: __download (Ander Punnar)
+	* Type __locale_system: Add devuan support (Dennis Camera)
+	* Type __package_opkg: Add locking (Dennis Camera)
+	* Type __hosts: Add --alias parameter (Dennis Camera)
+	* Type __user: Fix shadow explorer for OpenBSD (Dennis Camera)
+	* Core: Make emulator-part code consistent; remove faulty warning (Darko Poljak)
+	* Types __file, __directory: Support setuid, setguid, sticky bits (Dennis Camera)
+	* Type __postfix_master: Fix --option parameter and option expansion (Daniel Fancsali)
+	* Type __user: Install user packages on OpenWrt (Dennis Camera)
+	* Type __openldap_server: Add Alpine support (Timothée Floure)
+	* Type __package_apt: Fix for legacy APT versions that do not support --no-install-recommends (Dennis Camera)
+	* Type __key_value: Get awk from POSIX PATH (Dennis Camera)
+	* New type: __unpack (Ander Punnar)
+	* Type __locale_system: Support more OSes (Dennis Camera)
+	* Explorers cpu_cores, disks, memory: Fix for NetBSD (Dennis Camera)
+	* Type __sysctl: Fix for NetBSD (Dennis Camera)
+
+6.6.0: 2020-06-17
+	* Type __ssh_authorized_keys: Add option for removing undefined keys (Ander Punnar)
+	* Core: Support colored log output (Evil Ham)
+	* Core: Tune colored log output and respect NO_COLOR env var (Dennis Camera)
+	* Documentation: Fix failing man pages build with newer sphinx versions (Darko Poljak)
+	* Documentation: Fix trivial grammatical mistakes (Jaak Ristioja)
+	* Explorer os: Fix for sles15 (Daniel Heule)
+	* Type __clean_path: Add --path parameter (Ander Punnar)
+	* Core: Increase minimal supported Python version to 3.5 (Darko Poljak)
+	* Core: Add log server for nested logging (Steven Armstrong)
+
+6.5.6: 2020-05-25
+	* Type __pyvenv: Switch to python3 -m venv for Ubuntu (Nico Schottelius)
+	* Type __letsencrypt_cert: Whitelist Ubuntu (Nico Schottelius)
+	* Types __cron, __file, __link: Improve manpages (Matthias Stecher)
+	* Explorer machine_type: Add support for FreeBSD and OpenBSD, and simplify Linux code (Evil Ham)
+	* Type __ssh_authorized_key, __ssh_authorized_keys: Improve manpages (Evil Ham)
+	* Type __ssh_authorized_keys: Fix bug where --option was not multiple (Evil Ham)
+	* Type __motd: Debian/Ubuntu/Devuan use /etc/motd (Ander Punnar)
+	* Type __group: Fix --gid on FreeBSD (Ander Punnar)
+	* Configuration: Fix typos in cdist.cfg.skeleton (Jaak Ristioja)
+	* Type __user: Fix user deletion on FreeBSD (Ander Punnar)
+	* Core: Fix double log lines (Darko Poljak)
+
+6.5.5: 2020-05-01
+	* Core: Fix XDG_CONFIG_HOME config file location (Joachim Desroches)
+	* Type __postgres_database: Add encoding, lc-collate, lc-ctype, template parameters (Timothée Floure)
+	* Type __motd: Improve documentation and support for FreeBSD (Evil Ham)
+	* Type __openldap_server: Support extra config parameter (Evil Ham)
+	* Type __postfix: Automagically support more OSs by not checking too much (Evil Ham)
+	* New type: __pf_apply_anchor (Kamila Součková, Evil Ham)
+	* Type __pf_ruleset: Refactor (Kamila Součková, Evil Ham)
+	* Type __pf_apply: Deprecate type (Kamila Součková, Evil Ham)
+	* Configuration: Add notes to cdist.cfg.skeleton (Evil Ham)
+	* Explorers cpu_cores, memory: Improve BSD support (Evil Ham)
+	* Core: Remove debug logging noise (Evil Ham)
+
+6.5.4: 2020-04-11
+	* Explorer init: Do not grep on non-existent init (Steven Armstrong)
+	* Core: Bugfix to preserve conf dirs order (Steven Armstrong)
+
+6.5.3: 2020-04-03
+	* Type __cron: Make non parallel due to race condition (Nico Schottelius)
+	* Type __pyvenv: Use python3 -m venv on Alpine (Nico Schottelius)
+	* Type __user: Fix missing shadow for alpine (llnu)
+	* Type __consule_agent: Make conf_dir dependent on OS - fixes Alpine (Nico Schottelius)
+	* Type __letsencrypt_cert: Fix typo (Andrew Schleifer)
+	* Type __package_update_index: Fix maxage false positives (Matthias Stecher)
+
+6.5.2: 2020-02-27
+	* Type __update_alternatives: Add state explorer (Ander Punnar)
+	* Explorer os_version: Add support for Alpine Linux (Jin-Guk Kwon)
+	* Explorer init: Rewrite and support more init systems (Dennis Camera)
+	* New type: __service (Timothée Floure)
+	* Types __consul_*: Add optional parameter for using distribution packages (Timothée Floure)
+	* Explorer disks: Fix NetBSD, support Linux w/o lsblk (Dennis Camera)
+	* Type __directory: Add 'exists' and 'pre-exists' states (Dennis Camera)
+	* Type __file: Improve error messages for pre-exists state (Dennis Camera)
+
+6.5.1: 2020-02-15
+	* Type __consul_agent: Add Debian 10 support (Nico Schottelius)
+	* Explorer os_release: Add fallbacks (Dennis Camera)
+	* Types __file, __directory: Add fallback for systems without stat (Dennis Camera)
+	* Type __mysql_privileges: Fix quoting (Ander Punnar)
+	* Type __package_apt: Update package index if it is older than one day (Ander Punnar)
+	* Type __cron: Fix job removal if 'is' and 'should' don't match (Matthias Stecher)
+	* New type: __systemd_service (Matthias Stecher)
+	* Type __postgres_role: Fix password command syntax (Timothée Floure)
+
+6.5.0: 2020-01-23
+	* Type __acl: Add --entry parameter to replace --acl, deprecate --acl (Ander Punnar)
+	* Core: preos: Fix missing configuration file usage, support -g, --config-file option (Darko Poljak)
+	* Core info command: Support tilde expansion of conf directories (Darko Poljak)
+	* Types __postgres_*: Fix edge cases in quoted identifiers (Timothée Floure)
+	* New type: __apt_unattended_upgrades (Ander Punnar)
+	* Type __line: Bugfixes: (Dennis Camera)
+		- ensure the line is only added once
+		- always add line to end if anchor is not found
+		- match line at the beginning when not regex
+		- fix incorrect 'wrongposition' in state explorer
+		- produce error when file does not exist
+	* Type __acl: Add --source, --file and --directory parameters (Ander Punnar)
+
+6.4.0: 2020-01-04
+	* Type __consul_agent: Don't deploy init script on Alpine anymore, it ships with one itself (Nico Schottelius)
+	* Type __install_chroot_umount: Bugfix: type was not using __chroot_umount/manifest (Steven Armstrong)
+	* Types __postgres_*: Use double quoted identifiers in generated SQL (Timothée Floure)
+	* Core: Add cdist info command (Darko Poljak)
+	* New types: __mysql_user, __mysql_privileges (Ander Punnar)
+	* Type __mysql_database: Rewrite (Ander Punnar)
+
+6.3.0: 2019-12-12
+	* Type __package_update_index: Fix Alpine part (Dominique Roux)
+	* Documentation: Fix man pages for install types (Darko Poljak)
+	* Documentation: Embed config skeleton instead of rewriting it (Darko Poljak)
+	* Documentation: Remove cdist-type prefix and man page reference from type list in html (Darko Poljak)
+	* Documentation: PreOS english nitpicking (Evil Ham)
+	* Documentation: Add installing from source with signature verification (Darko Poljak)
+	* Core: preos: Support top command logging options, custom conf-dir option and CDIST_PATH env var (Darko Poljak)
+	* Type __start_on_boot: Docs: remove unsupported BSD claim (Evil Ham)
+	* New type: __openldap_server (Evil Ham)
+
+6.2.0: 2019-11-30
+	* Core: Redefine/reimplement/fix CDIST_ORDER_DEPENDENCY (Darko Poljak)
+
+6.1.1: 2019-11-26
+	* Type __xymon_config: Add parameters for ownership and generic rsync options (Thomas Eckert)
+	* Type __xymon_client: Add msgcache parameter to support passive clients (Thomas Eckert)
+	* Type __apt_key: Use mktemp for unique temporary gpg home (Ander Punnar)
+	* Type __hostname: Silence grep exit 1 when os_version is not numeric (Ander Punnar)
+	* Type __ufw: Print error message to stderr (Daniel Tschada)
+
+6.1.0: 2019-11-19
+	* Explorer hostname, type __hostname: Support more operating systems, rewrite type and hostname explorer (Dennis Camera)
+
+6.0.4: 2019-11-19
+	* Doc: Fix typos (Kirill Miazine)
+
+6.0.3: 2019-10-31
+	* Type __letsencrypt_cert: Add Alpine support (Nico Schottelius)
+	* Type __xymon_client: Fix spelling error in manpage (Dmitry Bogatov)
+	* Build: Support pip from git (Darko Poljak, Ľubomír Kučera)
+	* Type __package_update_index: Add Alpine support (Ahmed Bilal Khalid)
+
+6.0.2: 2019-10-17
+	* New types: __xymon_server, __xymon_apache, __xymon_config, __xymon_client (Thomas Eckert)
+	* Type __letsencrypt_cert: Add Arch Linux support (Nico Schottelius)
+	* New type: __sensible_editor (Dennis Camera)
+	* Types __grafana_dashboard, __prometheus_alertmanager, __prometheus_exporter, __prometheus_server: Support Debian 10 (Ahmed Bilal Khalid)
+
+6.0.1: 2019-10-08
+	* Type __group: Support OSes without getent (Dennis Camera)
+	* Type __user: Support OSes without getent (Dennis Camera)
+	* Type __ssh_authorized_keys: Support OSes without getent (Dennis Camera)
+	* Type __ssh_dot_ssh: Support OSes without getent (Dennis Camera)
+	* Explorer interfaces: Always sort output (Dennis Camera)
+	* Explorer os: Unquote value from os-release file (Dennis Camera)
+	* Type __letsencrypt_cert: Support Debian 10* (Ahmed Bilal Khalid)
+	* Type __prometheus_server: Add missing exit after unsupported error message (Dominique Roux)
+	* Type __git: Use --recurse-submodules instead of --recursive (Jonas Hagen)
+	* Type __git: Add --shallow option (Jonas Hagen)
+
+6.0.0: 2019-10-01
+	* Type __letsencrypt_cert: Fix beowulf's spelling (Mondi Ravi)
+	* Core: Add preos functionality (Darko Poljak)
+	* Type __sysctl: Add alpine support (Nico Schottelius)
+	* Type __git: Add recursive option (Dennis Camera)
+	* Type __apt_key: Fix key dearmor (Ander Punnar)
+
+5.1.3: 2019-08-30
+	* Build: Overcome bash CDPATH when building docs (Dmitry Bogatov)
+	* Type __grafana_dashboard: Update distribution name, package signing key URI and repository URI (Dominique Roux)
+	* Type __letsencrypt_cert: Add Devuan Beowulf support (Nico Schottelius)
+	* Type __letsencrypt_cert: Fix Devuan Ascii: support (Nico Schottelius)
+	* Type __docker: Add devuan support (Dominique Roux)
+	* Type __docker_swarm: Fix for Docker 19.03 (Ľubomír Kučera)
+
+5.1.2: 2019-06-21
+	* Core: Add support for type parameters deprecation (Darko Poljak)
+	* Type __acl: Rewrite and improve (Ander Punnar)
+
+5.1.1: 2019-05-28
+	* Type __apt_key: Use gpg key, fallback to deprecated apt-key (Ander Punnar)
+	* Type __acl: Fix and improve (Ander Punnar)
+	* Documentation: Document type stdin inside loop caveats (Darko Poljak)
+
+5.1.0: 2019-05-22
+	* Type __consul: Add alpine support (Nico Schottelius)
+	* Type __consul: Add version 1.5.0 (Nico Schottelius)
+	* Type __consul_agent: Add alpine support (Nico Schottelius)
+	* New helper script: cdist-new-type (Steven Armstrong, Darko Poljak)
+	* Core: Add support for deprecated type marker (Darko Poljak)
+
+5.0.2: 2019-05-17
+	* Type __package_apk: Fix @repo handling in explorer (Nico Schottelius)
+	* Type __postfix: Add alpine support (Nico Schottelius)
+	* Type __postfix_postconf: Add alpine support (Nico Schottelius)
+	* Type __user: Add alpine support (Nico Schottelius)
+	* Core: Set __cdist_dry_run env var (Ander Punnar)
+
+5.0.1: 2019-05-09
+	* Documentation: Add 'Perils of CDIST_ORDER_DEPENDENCY' sub-section (Darko Poljak)
+	* Build: Clean and separate end user targets into Makefile and maintainer targets into build-helper (Darko Poljak)
+	* Core: Update residual references to old cdist homepage (Darko Poljak)
+	* Documentation: Update residual references to old cdist homepage and git source (Darko Poljak)
+	* Type __cdist: Fix non working 'git://' protocol source (Darko Poljak)
+
+5.0.0: 2019-05-05
+	* Type __zypper_service: Fix spelling error in manpage (Dmitry Bogatov)
+	* Explorer init: Add support for OpenBSD (sideeffect42)
+	* Type __postgres_database: Run psql with -w (no-password) (sideeffect42)
+	* Type __postgres_role: Run psql with -w (no-password) (sideeffect42)
+	* Type __block: Quote prefix/suffix - fix when prefix/suffix contains quotes (sideeffect42)
+	* Build: Update due to migration to code.ungleich.ch (Darko Poljak)
+	* Documentation: Update due to migration to code.ungleich.ch (Darko Poljak)
+	* Core: Detect and report dependency cycle as soon as possible (Darko Poljak)
+	* Core, documentation: Release -j/--jobs option, i.e. make it non-beta (Darko Poljak)
+	* Documentation: Update due to new cdist website (Darko Poljak)
+	* Build: Update due to new cdist website (Darko Poljak)
+
+4.11.1: 2019-04-22
+	* Core: Improve explorer error reporting (Darko Poljak)
+	* Type __directory: explorer stat: add support for Solaris (Ander Punnar)
+	* Type __file: explorer stat: add support for Solaris (Ander Punnar)
+	* Type __ssh_authorized_keys: Remove legacy code (Ander Punnar)
+	* Explorer disks: Bugfix: do not break config in case of unsupported OS
+	  which was introduced in 4.11.0, print message to stderr and empty disk list
+	  to stdout instead (Darko Poljak)
+
+4.11.0: 2019-04-20
+	* Type __package: Add __package_apk support (Nico Schottelius)
+	* Type __directory: Add alpine support (Nico Schottelius)
+	* Type __file: Add alpine support (Nico Schottelius)
+	* Type __hostname: Add alpine support (Nico Schottelius)
+	* Type __locale: Add alpine support (Nico Schottelius)
+	* Type __start_on_boot: Add alpine support (Nico Schottelius)
+	* Type __timezone: Add alpine support (Nico Schottelius)
+	* Type __start_on_boot: gentoo: check all runlevels in explorer (Nico Schottelius)
+	* New type: __package_apk (Nico Schottelius)
+	* Type __acl: Add support for ACL mask (Dimitrios Apostolou)
+	* Core: Fix circular dependency for CDIST_ORDER_DEPENDENCY (Darko Poljak)
+	* Type __acl: Improve the type (Ander Punnar)
+	* Explorer interfaces: Simplify code, be more compatible (Ander Punnar)
+	* Explorer disks: Remove assumable default/fallback, for now explicitly support only Linux and BSDs (Ander Punnar, Darko Poljak)
+
+4.10.11: 2019-04-13
+	* Core: Fix broken quiet mode (Darko Poljak)
+	* Build: Add version.py into generated raw source archive (Darko Poljak)
+	* Explorer disks: Fix detecting disks, fix/add support for BSDs (Ander Punnar)
+	* Type __file: Fix stat explorer for BSDs (Ander Punnar)
+	* Type __directory: Fix stat explorer for BSDs (Ander Punnar)
+
+4.10.10: 2019-04-11
+	* New types: __ufw and __ufw_rule (Mark Polyakov)
+	* Type __link: Add messaging (Ander Punnar)
+	* Debugging: Rename debug-dump.sh to cdist-dump (Darko Poljak)
+	* Documentation: Add cdist-dump man page (Darko Poljak)
+
+4.10.9: 2019-04-09
+	* Type __ssh_authorized_keys: Properly handle multiple --option params (Steven Armstrong)
+	* Debugging: Add debug dump helper script (Darko Poljak)
+	* Type __file: Bugfix: fire onchange for present and exists states if no attribute is changed (Darko Poljak)
+
+4.10.8: 2019-04-06
+	* Type __clean_path: Fix list explorer exit code if path not directory or does not exist (Ander Punnar)
+	* New type: __check_messages (Ander Punnar)
+
+4.10.7: 2019-03-30
+	* Build: Migrate from pep8 to pycodestyle (Darko Poljak)
+	* Type __start_on_boot: Implement state absent for OpenBSD (Daniel Néri)
+	* Explorers cpu_cores, disks: Add support for OpenBSD (Daniel Néri)
+	* Type __staged_file: Use portable -p instead of --tmpdir for mktemp (Silas Silva)
+	* Type __line: Add onchange parameter (Ander Punnar)
+	* Type __file: Add onchange parameter (Ander Punnar)
+	* New type: __clean_path (Ander Punnar)
+
+4.10.6: 2019-02-15
+	* Type __prometheus_alertmanager: Add startup flag (Dominique Roux)
+	* Types __zypper_repo, __zypper_service: Re-add the use of echo in explorers (Daniel Heule)
+
+4.10.5: 2018-12-21
+	* Type __group: Fix/remove '--' from echo command (Dimitrios Apostolou)
+	* New type: __ping (Olliver Schinagl)
+	* Type __postgres_role: Fix broken syntax (Nico Schottelius, Darko Poljak)
+	* Type __consul_agent: Add Debian 9 support (Jin-Guk Kwon)
+	* Documentation: Fix broken links (Rage <OxR463>)
+	* Type __docker: Add version parameter (Jonas Weber)
+	* Type __sysctl: Refactor for better OS support (Takashi Yoshi)
+	* Types __package_*: Add messaging upon installation/removal (Takashi Yoshi)
+	* Type __package_pkg_openbsd: Reworked (Takashi Yoshi)
+
+4.10.4: 2018-11-03
+	* Core: Transfer all files of a directory at once instead of calling copy once per file (myeisha)
+	* Core: Add timestamp (optional) to log messages (Darko Poljak)
+	* Explorers and types: Fix shellcheck found problems and encountered bugs (Jonas Weber, Thomas Eckert, Darko Poljak)
+	* Build: Add shellcheck makefile target and check when doing release (Darko Poljak)
+	* Type __consul: Add newest versions (Dominique Roux)
+	* Type __user: Remove annoying output, handle state param gracefully, add messages for removal (Thomas Eckert)
+	* Core: Fix checking for conflicting parameters for multiple values parameters (Darko Poljak)
+	* Documentation: Various fixes (Thomas Eckert)
+	* Various types: Improve OpenBSD support (sideeffect42)
+
 4.10.3: 2018-09-23
 	* New global explorer: os_release (Ľubomír Kučera)
 	* Type __docker: Update type, install docker CE (Ľubomír Kučera)
@@ -677,9 +1098,9 @@ Changelog
 	* Removed type __removeline (replaced by __line) (Nico Schottelius)
 	* Type __directory: Parameter --parents and --recursive are now boolean (Nico Schottelius)
 	* Type __package_apt, __package_luarocks, __package_opkg,
-		__package_pacman, __package_pkg_freebsd, __package_pkg_openbsd,
-		__package_rubygem, __package_yum, __process:
-			Parameter state accepts only "present" and "absent" (Nico Schottelius)
+	  __package_pacman, __package_pkg_freebsd, __package_pkg_openbsd,
+	  __package_rubygem, __package_yum, __process:
+	  Parameter state accepts only "present" and "absent" (Nico Schottelius)
 	* Dist: Initial support for pypi packaging (Nico Schottelius)
 
 2.0.15: 2012-11-02

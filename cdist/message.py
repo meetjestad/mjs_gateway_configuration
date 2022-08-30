@@ -27,7 +27,7 @@ import tempfile
 log = logging.getLogger(__name__)
 
 
-class Message(object):
+class Message:
     """Support messaging between types
 
     """
@@ -70,7 +70,7 @@ class Message(object):
 
         with open(self.global_messages, 'a') as fd:
             for line in content:
-                fd.write("%s:%s" % (self.prefix, line))
+                fd.write("{}:{}".format(self.prefix, line))
 
     def merge_messages(self):
         self._merge_messages()

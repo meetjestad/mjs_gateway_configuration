@@ -19,20 +19,20 @@
 #
 
 name="$(cat "$__object/parameter/name" 2>/dev/null || echo "$__object_id")"
-conf_dir="/etc/consul/conf.d"
+conf_dir=$(cat "$__object/explorer/conf-dir")
 conf_file="service_${name}.json"
 state="$(cat "$__object/parameter/state")"
 
 # Sanity checks
-if [ -f "$__object/parameter/check-script" -a -f "$__object/parameter/check-ttl" ]; then
+if [ -f "$__object/parameter/check-script" ] && [ -f "$__object/parameter/check-ttl" ]; then
    echo "Use either --check-script together with --check-interval OR --check-ttl, but not both" >&2
    exit 1
 fi
-if [ -f "$__object/parameter/check-script" -a ! -f "$__object/parameter/check-interval" ]; then
+if [ -f "$__object/parameter/check-script" ] && [ ! -f "$__object/parameter/check-interval" ]; then
    echo "When using --check-script you must also define --check-interval" >&2
    exit 1
 fi
-if [ -f "$__object/parameter/check-http" -a ! -f "$__object/parameter/check-interval" ]; then
+if [ -f "$__object/parameter/check-http" ] && [ ! -f "$__object/parameter/check-interval" ]; then
    echo "When using --check-http you must also define --check-interval" >&2
    exit 1
 fi
@@ -42,9 +42,10 @@ fi
 echo "{"
 printf '   "service": {\n'
 printf '      "name": "%s"\n' "$name"
-for param in $(ls "$__object/parameter/"); do
+cd "$__object/parameter/"
+for param in *; do
    case "$param" in
-      state|name|check-interval) continue ;;
+      state|name|check-interval|conf-dir) continue ;;
       check-script)
          printf '     ,"check": {\n'
          printf '         "script": "%s"\n' "$(cat "$__object/parameter/check-script")"
@@ -85,7 +86,6 @@ echo "   }"
 # end json file
 echo "}"
 ) | \
-require="__directory${conf_dir}" \
    __config_file "${conf_dir}/${conf_file}" \
       --owner root --group consul --mode 640 \
       --state "$state" \

@@ -15,6 +15,7 @@ storage_path="$(cat "$__object/parameter/storage-path")"
 ##### INSTALL THE PACKAGE ###################################################
 
 require_pkg=""  # what to require if I want to require "the package"
+require=""
 if [ -f "$__object/parameter/install-from-backports" ]; then
 	os=$(cat "$__global/explorer/os")
 	os_version=$(cat "$__global/explorer/os_version")
@@ -29,6 +30,7 @@ if [ -f "$__object/parameter/install-from-backports" ]; then
 		*)
 			echo "--install-from-backports is only supported on Devuan -- ignoring." >&2
 			echo "Send a pull request if you require it." >&2
+			exit 1
 		;;
 	esac
 else
@@ -48,7 +50,7 @@ __key_value alertmanager_fix_init_script --file /etc/init.d/prometheus-alertmana
 
 ##### CONFIGURE #############################################################
 
-FLAGS="--storage.path $storage_path --data.retention $(($retention_days*24))h --web.listen-address [::]:9093"
+FLAGS="--storage.path $storage_path --data.retention $((retention_days*24))h --web.listen-address [::]:9093 --cluster.advertise-address [::]:9093"
 
 require="$require $require_pkg" \
 __key_value alertmanager_args --file /etc/default/prometheus-alertmanager \
@@ -57,7 +59,7 @@ __key_value alertmanager_args --file /etc/default/prometheus-alertmanager \
 
 require="$require __directory/$storage_path $require_pkg" \
 __config_file $CONF \
-	--source $config \
+	--source "$config" \
 	--group prometheus --mode 640 \
-	--onchange "service prometheus-alertmanager reload"  # TODO when a config-check tool is available, check config here
+	--onchange "service prometheus-alertmanager restart"  # TODO when a config-check tool is available, check config here
 

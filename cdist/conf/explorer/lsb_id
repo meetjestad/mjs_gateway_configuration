@@ -20,8 +20,12 @@
 #
 
 set +e
-case "$($__explorer/os)" in
+case "$("$__explorer/os")" in
+   checkpoint)
+       echo "CheckPoint"
+   ;;
    openwrt)
+      # shellcheck disable=SC1091
       (. /etc/openwrt_release && echo "$DISTRIB_ID")
    ;;
    *)

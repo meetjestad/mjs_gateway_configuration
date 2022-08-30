@@ -30,10 +30,10 @@ class AbsolutePathRequiredError(cdist.Error):
         self.path = path
 
     def __str__(self):
-        return 'Absolute path required, got: %s' % self.path
+        return 'Absolute path required, got: {}'.format(self.path)
 
 
-class FileList(collections.MutableSequence):
+class FileList(collections.abc.MutableSequence):
     """A list that stores it's state in a file.
 
     """
@@ -58,7 +58,7 @@ class FileList(collections.MutableSequence):
             with open(self.path) as fd:
                 for line in fd:
                     lines.append(line.rstrip('\n'))
-        except EnvironmentError as e:
+        except EnvironmentError:
             # error ignored
             pass
         return lines
@@ -102,7 +102,7 @@ class FileList(collections.MutableSequence):
         self.__write(lines)
 
 
-class DirectoryDict(collections.MutableMapping):
+class DirectoryDict(collections.abc.MutableMapping):
     """A dict that stores it's items as files in a directory.
 
     """
@@ -127,7 +127,16 @@ class DirectoryDict(collections.MutableMapping):
     def __getitem__(self, key):
         try:
             with open(os.path.join(self.path, key), "r") as fd:
-                return fd.read().rstrip('\n')
+                value = fd.read().splitlines()
+                # if there is no value/empty line then return ''
+                # if there is only one value then return that value
+                # if there are multiple lines in file then return list
+                if not value:
+                    return ''
+                elif len(value) == 1:
+                    return value[0]
+                else:
+                    return value
         except EnvironmentError:
             raise KeyError(key)
 
@@ -168,7 +177,7 @@ class DirectoryDict(collections.MutableMapping):
             raise cdist.Error(str(e))
 
 
-class FileBasedProperty(object):
+class FileBasedProperty:
     attribute_class = None
 
     def __init__(self, path):
@@ -180,7 +189,7 @@ class FileBasedProperty(object):
 
         Usage with a sublcass:
 
-        class Foo(object):
+        class Foo:
             # note that the actual DirectoryDict is stored as __parameters
             # on the instance
             parameters = DirectoryDictProperty(
@@ -209,7 +218,7 @@ class FileBasedProperty(object):
 
     def _get_attribute(self, instance, owner):
         name = self._get_property_name(owner)
-        attribute_name = '__%s' % name
+        attribute_name = '__{}'.format(name)
         if not hasattr(instance, attribute_name):
             path = self._get_path(instance)
             attribute_instance = self.attribute_class(path)

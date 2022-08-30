@@ -18,8 +18,13 @@
 # along with cdist. If not, see <http://www.gnu.org/licenses/>.
 #
 #
-# Retrieve the status of a package - parsed dpkg output
+# Retrieve the status of a package - parsed pkgng output
 #
+
+if ! pkg -N >/dev/null 2>&1; then
+   # Nothing to do if pkg is not bootstrapped
+   exit
+fi
 
 if [ -f "$__object/parameter/name" ]; then
    name="$(cat "$__object/parameter/name")"
@@ -29,7 +34,7 @@ fi
 
 # Don't produce "no pkgs installed" output -- breaks things
 PKG_OUTPUT=$(pkg info 2>&1)
-echo -n "$(echo "$PKG_OUTPUT" \
+printf "%s" "$(echo "$PKG_OUTPUT" \
    | awk '{print $1}' \
    | sed 's/^\(.*\)-\([^-]*\)$/name:\1 ver:\2/g' \
    | grep "name:$name ver:" \

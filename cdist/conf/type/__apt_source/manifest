@@ -31,9 +31,15 @@ fi
 component="$(cat "$__object/parameter/component")"
 
 if [ -f "$__object/parameter/arch" ]; then
-   forcedarch="[arch=$(cat "$__object/parameter/arch")]"
-else
-   forcedarch=""
+   options="arch=$(cat "$__object/parameter/arch")"
+fi
+
+if [ -f "$__object/parameter/signed-by" ]; then
+   options="$options signed-by=$(cat "$__object/parameter/signed-by")"
+fi
+
+if [ "$options" ]; then
+    options="[$options]"
 fi
 
 # export variables for use in template
@@ -41,7 +47,7 @@ export name
 export uri
 export distribution
 export component
-export forcedarch
+export options
 
 # generate file from template
 mkdir "$__object/files"

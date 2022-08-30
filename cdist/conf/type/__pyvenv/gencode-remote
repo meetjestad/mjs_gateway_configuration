@@ -1,6 +1,7 @@
 #!/bin/sh -e
 #
 # 2016 Darko Poljak (darko.poljak at gmail.com)
+# 2020 Nico Schotetlius (nico.schottelius at ungleich.ch)
 #
 # This file is part of cdist.
 #
@@ -29,28 +30,38 @@ owner="$(cat "$__object/parameter/owner")"
 group="$(cat "$__object/parameter/group")"
 mode="$(cat "$__object/parameter/mode")"
 
-[  "$state_should" = "$state_is" -a \
-   "$owner" = "$owner_is" -a \
-   "$group" = "$group_is" -a \
-   -n "$mode" ] && exit 0
+[  "$state_should" = "$state_is" ] && \
+[  "$owner" = "$owner_is" ] && \
+[  "$group" = "$group_is" ] && \
+[  -n "$mode" ] && exit 0
 
 destination="/$__object_id"
 venvparams="$(cat "$__object/parameter/venvparams")"
 pyvenvparam="$__object/parameter/pyvenv"
+
+os=$(cat "$__global/explorer/os")
+
 if [ -f "$pyvenvparam" ]
 then
     pyvenv=$(cat "$pyvenvparam")
 else
-    pyvenv="pyvenv"
+    case "$os" in
+        alpine|ubuntu) # no pyvenv on alpine - I assume others will follow
+            pyvenv="python3 -m venv"
+            ;;
+        *)
+            pyvenv="pyvenv"
+            ;;
+    esac
 fi
 
 case $state_should in
     present)
         if [ "$state_should" != "$state_is" ]; then
-            echo $pyvenv $venvparams "$destination"
+            echo "$pyvenv $venvparams $destination"
         fi
-        if [ \( -n "$owner" -a "$owner_is" != "$owner" \) -o \
-             \( -n "$group" -a "$group_is" != "$group" \) ]; then
+        if { [ -n "$owner" ] && [ "$owner_is" != "$owner" ]; } || \
+           { [ -n "$group" ] && [ "$group_is" != "$group" ]; }; then
             echo chown -R "${owner}:${group}" "$destination"
         fi
         if [ -n "$mode" ]; then

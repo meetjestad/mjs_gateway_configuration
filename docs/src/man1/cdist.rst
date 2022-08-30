@@ -11,53 +11,85 @@ SYNOPSIS
 
 ::
 
-    cdist [-h] [-V] {banner,config,install,inventory,shell} ...
+    cdist [-h] [-V] {banner,config,install,inventory,preos,shell,info} ...
 
     cdist banner [-h] [-l LOGLEVEL] [-q] [-v]
 
-    cdist config [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-g CONFIG_FILE]
-                 [-C CACHE_PATH_PATTERN] [-c CONF_DIR] [-i MANIFEST]
-                 [-j [JOBS]] [-n] [-o OUT_PATH] [-R [{tar,tgz,tbz2,txz}]]
-                 [-r REMOTE_OUT_DIR] [--remote-copy REMOTE_COPY]
-                 [--remote-exec REMOTE_EXEC] [-I INVENTORY_DIR] [-4] [-6]
-                 [-A] [-a] [-f HOSTFILE] [-p [HOST_MAX]] [-S] [-s] [-t]
-                 [host [host ...]] 
+    cdist config [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
+                 [-g CONFIG_FILE] [-4] [-6] [-C CACHE_PATH_PATTERN]
+                 [-c CONF_DIR] [-i MANIFEST] [-j [JOBS]] [--log-server]
+                 [-n] [-o OUT_PATH] [-P] [-R [{tar,tgz,tbz2,txz}]]
+                 [-r REMOTE_OUT_PATH] [--remote-copy REMOTE_COPY]
+                 [--remote-exec REMOTE_EXEC] [-S] [-I INVENTORY_DIR] [-A]
+                 [-a] [-f HOSTFILE] [-p [HOST_MAX]] [-s] [-t]
+                 [host [host ...]]
 
-    cdist install [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-g CONFIG_FILE]
-                  [-C CACHE_PATH_PATTERN] [-c CONF_DIR] [-i MANIFEST]
-                  [-j [JOBS]] [-n] [-o OUT_PATH] [-R [{tar,tgz,tbz2,txz}]]
-                  [-r REMOTE_OUT_DIR] [--remote-copy REMOTE_COPY]
-                  [--remote-exec REMOTE_EXEC] [-I INVENTORY_DIR] [-4] [-6]
-                  [-A] [-a] [-f HOSTFILE] [-p [HOST_MAX]] [-S] [-s] [-t]
-                  [host [host ...]] 
+    cdist install [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
+                  [-g CONFIG_FILE] [-4] [-6] [-C CACHE_PATH_PATTERN]
+                  [-c CONF_DIR] [-i MANIFEST] [-j [JOBS]] [--log-server]
+                  [-n] [-o OUT_PATH] [-P] [-R [{tar,tgz,tbz2,txz}]]
+                  [-r REMOTE_OUT_PATH] [--remote-copy REMOTE_COPY]
+                  [--remote-exec REMOTE_EXEC] [-S] [-I INVENTORY_DIR] [-A]
+                  [-a] [-f HOSTFILE] [-p [HOST_MAX]] [-s] [-t]
+                  [host [host ...]]
 
     cdist inventory [-h] {add-host,add-tag,del-host,del-tag,list} ...
 
-    cdist inventory add-host [-h] [-l LOGLEVEL] [-q] [-v] [-b]
-                             [-g CONFIG_FILE] [-I INVENTORY_DIR]
-                             [-f HOSTFILE]
+    cdist inventory add-host [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
+                             [-g CONFIG_FILE] [-I INVENTORY_DIR] [-f HOSTFILE]
                              [host [host ...]]
 
-    cdist inventory add-tag [-h] [-l LOGLEVEL] [-q] [-v] [-b]
-                            [-g CONFIG_FILE] [-I INVENTORY_DIR]
-                            [-f HOSTFILE] [-T TAGFILE] [-t TAGLIST]
+    cdist inventory add-tag [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
+                            [-g CONFIG_FILE] [-I INVENTORY_DIR] [-f HOSTFILE]
+                            [-T TAGFILE] [-t TAGLIST]
                             [host [host ...]]
 
-    cdist inventory del-host [-h] [-l LOGLEVEL] [-q] [-v] [-b]
+    cdist inventory del-host [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
                              [-g CONFIG_FILE] [-I INVENTORY_DIR] [-a]
                              [-f HOSTFILE]
                              [host [host ...]]
 
-    cdist inventory del-tag [-h] [-l LOGLEVEL] [-q] [-v] [-b]
+    cdist inventory del-tag [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
                             [-g CONFIG_FILE] [-I INVENTORY_DIR] [-a]
                             [-f HOSTFILE] [-T TAGFILE] [-t TAGLIST]
                             [host [host ...]]
 
-    cdist inventory list [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-g CONFIG_FILE]
-                         [-I INVENTORY_DIR] [-a] [-f HOSTFILE] [-H] [-t]
+    cdist inventory list [-h] [-l LOGLEVEL] [-q] [-v] [-b] [--colors WHEN]
+                         [-g CONFIG_FILE] [-I INVENTORY_DIR] [-a] [-f HOSTFILE]
+                         [-H] [-t]
                          [host [host ...]]
 
-    cdist shell [-h] [-l LOGLEVEL] [-q] [-v] [-s SHELL]
+    cdist preos [-h] [-l LOGLEVEL] [-q] [-v] [-c CONF_DIR] [-g CONFIG_FILE] [-L]
+                [preos] ...
+
+    cdist preos [preos-options] debian [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-a ARCH] [-B]
+                                       [-C] [-c CDIST_PARAMS] [-D DRIVE] [-e REMOTE_EXEC]
+                                       [-i MANIFEST] [-k KEYFILE ] [-m MIRROR]
+                                       [-P ROOT_PASSWORD] [-p PXE_BOOT_DIR] [-r]
+                                       [-S SCRIPT] [-s SUITE] [-y REMOTE_COPY]
+                                       target_dir
+
+    cdist preos [preos-options] devuan [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-a ARCH] [-B]
+                                       [-C] [-c CDIST_PARAMS] [-D DRIVE] [-e REMOTE_EXEC]
+                                       [-i MANIFEST] [-k KEYFILE ] [-m MIRROR]
+                                       [-P ROOT_PASSWORD] [-p PXE_BOOT_DIR] [-r]
+                                       [-S SCRIPT] [-s SUITE] [-y REMOTE_COPY]
+                                       target_dir
+
+    cdist preos [preos-options] ubuntu [-h] [-l LOGLEVEL] [-q] [-v] [-b] [-a ARCH] [-B]
+                                       [-C] [-c CDIST_PARAMS] [-D DRIVE] [-e REMOTE_EXEC]
+                                       [-i MANIFEST] [-k KEYFILE ] [-m MIRROR]
+                                       [-P ROOT_PASSWORD] [-p PXE_BOOT_DIR] [-r]
+                                       [-S SCRIPT] [-s SUITE] [-y REMOTE_COPY]
+                                       target_dir
+
+    cdist shell [-h] [-l LOGLEVEL] [-q] [-v] [--colors WHEN] [-s SHELL]
+
+    cdist info [-h] [-a] [-c CONF_DIR] [-e] [-F] [-f] [-g CONFIG_FILE] [-t]
+               [pattern]
+
+    cdist scan -I INTERFACE [--m MODE] [--name-mapper PATH_TO_SCRIPT] [--list]
+               [-d CONFIG_DELAY] [-t TRIGGER_DELAY]
 
 
 DESCRIPTION
@@ -66,7 +98,7 @@ cdist is the frontend executable to the cdist configuration management.
 It supports different subcommands as explained below.
 
 It is written in Python so it requires :strong:`python`\ (1) to be installed.
-It requires a minimal Python version 3.2.
+It requires a minimal Python version 3.5.
 
 GENERAL
 -------
@@ -75,10 +107,18 @@ All commands accept the following options:
 **-h, --help**
     Show the help screen.
 
+**--colors WHEN**
+    Colorize cdist's output. If enabled, cdist will use different colors for
+    different log levels.
+    WHEN recognizes the values 'always', 'never', and 'auto' (the default).
+
+    If the value is 'auto', colored output is enabled if stdout is a TTY
+    unless the NO_COLOR (https://no-color.org/) environment variable is defined.
+
 **-l LOGLEVEL, --log-level LOGLEVEL**
     Set the specified verbosity level. The levels, in
     order from the lowest to the highest, are: ERROR (-1),
-    WARNING (0), INFO (1), VERBOSE (2), DEBUG (3) TRACE (4
+    WARNING (0), INFO (1), VERBOSE (2), DEBUG (3), TRACE (4
     or higher). If used along with -v then -v increases
     last set value and -l overwrites last set value.
 
@@ -91,7 +131,7 @@ All commands accept the following options:
     value is 0 which includes ERROR and WARNING levels.
     The levels, in order from the lowest to the highest,
     are: ERROR (-1), WARNING (0), INFO (1), VERBOSE (2),
-    DEBUG (3) TRACE (4 or higher). If used along with -l
+    DEBUG (3), TRACE (4 or higher). If used along with -l
     then -l overwrites last set value and -v increases
     last set value.
 
@@ -127,7 +167,7 @@ Install command is currently in beta.
 
 **-b, --beta**
     Enable beta functionality.
-    
+
 **-C CACHE_PATH_PATTERN, --cache-path-pattern CACHE_PATH_PATTERN**
     Specify custom cache path pattern. If it is not set then
     default hostdir is used. For more info on format see
@@ -140,17 +180,15 @@ Install command is currently in beta.
 
 **-f HOSTFILE, --file HOSTFILE**
     Read specified file for a list of additional hosts to operate on
-    or if '-' is given, read stdin (one host per line).
-    If no host or host file is specified then, by default,
-    read hosts from stdin. For the file format see
-    :strong:`HOSTFILE FORMAT` below.
+    or if '-' is given, read stdin (one host per line). For the file
+    format see :strong:`HOSTFILE FORMAT` below.
 
 **-g CONFIG_FILE, --config-file CONFIG_FILE**
     Use specified custom configuration file.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -163,13 +201,23 @@ Install command is currently in beta.
     Operate in parallel in specified maximum number of
     jobs. Global explorers, object prepare and object run
     are supported. Without argument CPU count is used by
-    default. Currently in beta.
+    default.
+
+**--log-server**
+    Start a log server for sub processes to use. This is
+    mainly useful when running cdist nested from a code-
+    local script. Log server is always implicitly started
+    for 'install' command.
 
 **-n, --dry-run**
     Do not execute code.
 
 **-o OUT_PATH, --out-dir OUT_PATH**
     Directory to save cdist output in.
+
+**-P, --timestamp**
+    Timestamp log messages with the current local date and time
+    in the format: YYYYMMDDHHMMSS.us.
 
 **-p [HOST_MAX], --parallel [HOST_MAX]**
     Operate on multiple hosts in parallel for specified
@@ -252,16 +300,15 @@ Add host(s) to inventory database.
 
 **-f HOSTFILE, --file HOSTFILE**
     Read additional hosts to add from specified file or
-    from stdin if '-' (each host on separate line). If no
-    host or host file is specified then, by default, read
-    from stdin. Hostfile format is the same as config hostfile format.
+    from stdin if '-' (each host on separate line).
+    Hostfile format is the same as config hostfile format.
 
 **-g CONFIG_FILE, --config-file CONFIG_FILE**
     Use specified custom configuration file.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -280,18 +327,15 @@ Add tag(s) to inventory database.
 
 **-f HOSTFILE, --file HOSTFILE**
     Read additional hosts to add tags from specified file
-    or from stdin if '-' (each host on separate line). If
-    no host or host file is specified then, by default,
-    read from stdin. If no tags/tagfile nor hosts/hostfile
-    are specified then tags are read from stdin and are
-    added to all hosts. Hostfile format is the same as config hostfile format.
+    or from stdin if '-' (each host on separate line).
+    Hostfile format is the same as config hostfile format.
 
 **-g CONFIG_FILE, --config-file CONFIG_FILE**
     Use specified custom configuration file.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -299,11 +343,8 @@ Add tag(s) to inventory database.
 
 **-T TAGFILE, --tag-file TAGFILE**
     Read additional tags to add from specified file or
-    from stdin if '-' (each tag on separate line). If no
-    tag or tag file is specified then, by default, read
-    from stdin. If no tags/tagfile nor hosts/hostfile are
-    specified then tags are read from stdin and are added
-    to all hosts. Tagfile format is the same as config hostfile format.
+    from stdin if '-' (each tag on separate line).
+    Tagfile format is the same as config hostfile format.
 
 **-t TAGLIST, --taglist TAGLIST**
     Tag list to be added for specified host(s), comma
@@ -325,16 +366,15 @@ Delete host(s) from inventory database.
 
 **-f HOSTFILE, --file HOSTFILE**
     Read additional hosts to delete from specified file or
-    from stdin if '-' (each host on separate line). If no
-    host or host file is specified then, by default, read
-    from stdin. Hostfile format is the same as config hostfile format.
+    from stdin if '-' (each host on separate line).
+    Hostfile format is the same as config hostfile format.
 
 **-g CONFIG_FILE, --config-file CONFIG_FILE**
     Use specified custom configuration file.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -357,18 +397,15 @@ Delete tag(s) from inventory database.
 **-f HOSTFILE, --file HOSTFILE**
     Read additional hosts to delete tags for from
     specified file or from stdin if '-' (each host on
-    separate line). If no host or host file is specified
-    then, by default, read from stdin. If no tags/tagfile
-    nor hosts/hostfile are specified then tags are read
-    from stdin and are deleted from all hosts. Hostfile
-    format is the same as config hostfile format.
+    separate line). Hostfile format is the same as
+    config hostfile format.
 
 **-g CONFIG_FILE, --config-file CONFIG_FILE**
     Use specified custom configuration file.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -376,11 +413,8 @@ Delete tag(s) from inventory database.
 
 **-T TAGFILE, --tag-file TAGFILE**
     Read additional tags from specified file or from stdin
-    if '-' (each tag on separate line). If no tag or tag
-    file is specified then, by default, read from stdin.
-    If no tags/tagfile nor hosts/hostfile are specified
-    then tags are read from stdin and are added to all
-    hosts. Tagfile format is the same as config hostfile format.
+    if '-' (each tag on separate line).
+    Tagfile format is the same as config hostfile format.
 
 **-t TAGLIST, --taglist TAGLIST**
     Tag list to be deleted for specified host(s), comma
@@ -415,7 +449,7 @@ List inventory database.
 
 **-I INVENTORY_DIR, --inventory INVENTORY_DIR**
     Use specified custom inventory directory. Inventory
-    directory is set up by the following rules: if cdist 
+    directory is set up by the following rules: if cdist
     configuration resolves this value then specified
     directory is used, if HOME env var is set then
     ~/.cdit/inventory is used, otherwise distribution
@@ -424,6 +458,146 @@ List inventory database.
 **-t, --tag**
     Host is specified by tag, not hostname/address; list
     all hosts that contain any of specified tags.
+
+
+PREOS
+-----
+Create PreOS.
+
+**-c CONF_DIR, --conf-dir CONF_DIR**
+    Add configuration directory (one that contains "preos" subdirectory).
+
+**-g CONFIG_FILE, --config-file CONFIG_FILE**
+    Use specified custom configuration file.
+
+**-L, --list-preoses**
+    List available PreOS-es.
+
+Currently, the following PreOS-es are supported:
+
+* debian
+* ubuntu
+* devuan
+
+
+PREOS DEBIAN/DEVUAN
+-------------------
+
+**target_dir**
+    target directory where PreOS will be bootstrapped
+
+**-a ARCH, --arch ARCH**
+    target debootstrap architecture, by default 'amd64'
+
+**-B, --bootstrap**
+    do bootstrap step
+
+**-b, --beta**
+    Enable beta functionality.
+
+**-C, --configure**
+    do configure step
+
+**-c CDIST_PARAMS, --cdist-params CDIST_PARAMS**
+    parameters that will be passed to cdist config, by
+    default '-v' is used
+
+**-D DRIVE, --drive-boot DRIVE**
+   create bootable PreOS on specified drive
+
+**-e REMOTE_EXEC, --remote-exec REMOTE_EXEC**
+    remote exec that cdist config will use, by default
+    internal script is used
+
+**-i MANIFEST, --init-manifest MANIFEST**
+    init manifest that cdist config will use, by default
+    internal init manifest is used
+
+**-k KEYFILE, --keyfile KEYFILE**
+    ssh key files that will be added to cdist config;
+    '``__ssh_authorized_keys root ...``' type is appended to initial manifest
+
+**-m MIRROR, --mirror MIRROR**
+    use specified mirror for debootstrap
+
+**-P ROOT_PASSWORD, --root-password ROOT_PASSWORD**
+    Set specified password for root, generated by default
+
+**-p PXE_BOOT_DIR, --pxe-boot-dir PXE_BOOT_DIR**
+    PXE boot directory
+
+**-r, --rm-bootstrap-dir**
+    remove target directory after finishing
+
+**-S SCRIPT, --script SCRIPT**
+    use specified script for debootstrap
+
+**-s SUITE, --suite SUITE**
+    suite used for debootstrap, by default 'stable'
+
+**-y REMOTE_COPY, --remote-copy REMOTE_COPY**
+    remote copy that cdist config will use, by default
+    internal script is used
+
+
+PREOS UBUNTU
+------------
+
+**target_dir**
+    target directory where PreOS will be bootstrapped
+
+**-a ARCH, --arch ARCH**
+    target debootstrap architecture, by default 'amd64'
+
+**-B, --bootstrap**
+    do bootstrap step
+
+**-b, --beta**
+    Enable beta functionality.
+
+**-C, --configure**
+    do configure step
+
+**-c CDIST_PARAMS, --cdist-params CDIST_PARAMS**
+    parameters that will be passed to cdist config, by
+    default '-v' is used
+
+**-D DRIVE, --drive-boot DRIVE**
+   create bootable PreOS on specified drive
+
+**-e REMOTE_EXEC, --remote-exec REMOTE_EXEC**
+    remote exec that cdist config will use, by default
+    internal script is used
+
+**-i MANIFEST, --init-manifest MANIFEST**
+    init manifest that cdist config will use, by default
+    internal init manifest is used
+
+**-k KEYFILE, --keyfile KEYFILE**
+    ssh key files that will be added to cdist config;
+    '``__ssh_authorized_keys root ...``' type is appended to initial manifest
+
+**-m MIRROR, --mirror MIRROR**
+    use specified mirror for debootstrap
+
+**-P ROOT_PASSWORD, --root-password ROOT_PASSWORD**
+    Set specified password for root, generated by default
+
+**-p PXE_BOOT_DIR, --pxe-boot-dir PXE_BOOT_DIR**
+    PXE boot directory
+
+**-r, --rm-bootstrap-dir**
+    remove target directory after finishing
+
+**-S SCRIPT, --script SCRIPT**
+    use specified script for debootstrap
+
+**-s SUITE, --suite SUITE**
+    suite used for debootstrap, by default 'xenial'
+
+**-y REMOTE_COPY, --remote-copy REMOTE_COPY**
+    remote copy that cdist config will use, by default
+    internal script is used
 
 
 SHELL
@@ -437,6 +611,64 @@ usage. Its primary use is for debugging type parameters.
     Select shell to use, defaults to current shell. Used shell should
     be POSIX compatible shell.
 
+
+INFO
+----
+Display information for cdist (global explorers, types).
+
+**pattern**
+    Glob pattern. If it contains special characters('?', '*', '[') then it is
+    used as specified, otherwise it is translated to `*pattern*`.
+
+**-h, --help**
+    Show help message and exit.
+
+**-a, --all**
+    Display all info. This is the default.
+
+**-c CONF_DIR, --conf-dir CONF_DIR**
+    Add configuration directory (can be repeated).
+
+**-e, --global-explorers**
+    Display info for global explorers.
+
+**-F, --fixed-string**
+    Interpret pattern as a fixed string.
+
+**-f, --full**
+    Display full details.
+
+**-g CONFIG_FILE, --config-file CONFIG_FILE**
+    Use specified custom configuration file.
+
+**-t, --types**
+    Display info for types.
+
+SCAN
+----
+
+Runs cdist as a daemon that discover/watch on hosts and reconfigure them
+periodically.
+
+**-I INTERFACE, --interfaces INTERFACE**
+    Interface to listen on. Can be specified multiple times.
+
+**-m MODE, --mode MODE**
+    Scanner components to enable. Can be specified multiple time to enable more
+    than one component. Supported modes are: scan, trigger and config. Defaults
+    to tiggger and scan.
+
+**--name-mapper PATH_TO_SCRIPT**
+    Path to script used to resolve a remote host name from an IPv6 address.
+
+**--list**
+    List known hosts and exit.
+
+**-d CONFIG_DELAY, --config-delay CONFIG_DELAY**
+    How long (seconds) to wait before reconfiguring after last try (config mode only).
+
+**-t TRIGGER_DELAY, --tigger-delay TRIGGER_DELAY**
+    How long (seconds) to wait between ICMPv6 echo requests (trigger mode only).
 
 CONFIGURATION
 -------------
@@ -466,6 +698,9 @@ The possible keywords and their meanings are as follows:
 
 :strong:`cache_path_pattern`
     Specify cache path pattern.
+
+:strong:`colored_output`
+    Colorize cdist's output. cf. the :code:`--colors` option.
 
 :strong:`conf_dir`
     List of configuration directories separated with the character conventionally
@@ -515,8 +750,12 @@ The possible keywords and their meanings are as follows:
     It recognizes boolean values from 'yes'/'no', 'on'/'off', 'true'/'false'
     and '1'/'0'.
 
+:strong:`timestamp`
+    Timestamp log messages with the current local date and time
+    in the format: YYYYMMDDHHMMSS.us.
+
 :strong:`verbosity`
-    Set verbosity level. Valid values are: 
+    Set verbosity level. Valid values are:
     'ERROR', 'WARNING', 'INFO', 'VERBOSE', 'DEBUG', 'TRACE' and 'OFF'.
 
 
@@ -530,12 +769,16 @@ FILES
 ~/.cdist/inventory
     The home inventory directory. If ~/.cdist exists it will be used as
     default inventory directory.
+~/.cdist/preos
+    PreOS plugins directory, if existing.
 cdist/conf
     The distribution configuration directory. It contains official types and
     explorers. This path is relative to cdist installation directory.
 cdist/inventory
     The distribution inventory directory.
     This path is relative to cdist installation directory.
+cdist/preos
+    The distribution PreOS plugins directory.
 /etc/cdist.cfg
     Global cdist configuration file, if exists.
 ~/.cdist.cfg or $XDG_CONFIG_HOME/cdist/cdist.cfg
@@ -544,7 +787,7 @@ cdist/inventory
 NOTES
 -----
 cdist detects if host is specified by IPv6 address. If so then remote_copy
-command is executed with host address enclosed in square brackets 
+command is executed with host address enclosed in square brackets
 (see :strong:`scp`\ (1)).
 
 EXAMPLES
@@ -568,8 +811,7 @@ EXAMPLES
     % cdist config -f loadbalancers
 
     # Configure hosts read from file web.hosts using 16 parallel jobs
-    # (beta functionality)
-    % cdist config -b -j 16 -f web.hosts
+    % cdist config -j 16 -f web.hosts
 
     # Display banner
     cdist banner
@@ -625,6 +867,20 @@ EXAMPLES
     # Configure all hosts from inventory db
     $ cdist config -b -A
 
+    # Create default debian PreOS in debug mode
+    $ cdist preos debian /preos/preos-debian -vvvv -C \
+        -k ~/.ssh/id_rsa.pub -p /preos/pxe-debian
+
+    # Create ubuntu PreOS
+    $ cdist preos ubuntu /preos/preos-ubuntu -C \
+        -k ~/.ssh/id_rsa.pub -p /preos/pxe-ubuntu
+
+    # Create ubuntu PreOS on drive /dev/sdb
+    # and set root password to 'password'.
+    $ cdist preos ubuntu /mnt -B -C \
+        -k ~/.ssh/id_rsa.pub -D /dev/sdb \
+        -P password
+
 
 ENVIRONMENT
 -----------
@@ -648,6 +904,8 @@ CDIST_OVERRIDE
 
 CDIST_ORDER_DEPENDENCY
     Create dependencies based on the execution order.
+    Note that in version 6.2.0 semantic of this processing mode is
+    finally fixed and well defined.
 
 CDIST_REMOTE_EXEC
     Use this command for remote execution (should behave like ssh).
@@ -663,6 +921,9 @@ CDIST_BETA
 
 CDIST_CACHE_PATH_PATTERN
     Custom cache path pattern.
+
+CDIST_COLORED_OUTPUT
+    Colorize cdist's output. cf. the :code:`--colors` option.
 
 CDIST_CONFIG_FILE
     Custom configuration file.
@@ -726,5 +987,5 @@ such case and display a warning message. An example of such a case:
 
 COPYING
 -------
-Copyright \(C) 2011-2017 Nico Schottelius. Free use of this software is
+Copyright \(C) 2011-2020 Nico Schottelius. Free use of this software is
 granted under the terms of the GNU General Public License v3 or later (GPLv3+).

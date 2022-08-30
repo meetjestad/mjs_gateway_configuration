@@ -22,11 +22,27 @@
 
 import os
 import hashlib
+import subprocess
 
 import cdist.log
-import cdist.version
 
-VERSION = cdist.version.VERSION
+
+VERSION = 'unknown version'
+
+try:
+    import cdist.version
+    VERSION = cdist.version.VERSION
+except ModuleNotFoundError:
+    cdist_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), os.pardir))
+    if os.path.isdir(os.path.join(cdist_dir, '.git')):
+        try:
+            VERSION = subprocess.check_output(
+                ['git', 'describe', '--always'],
+                cwd=cdist_dir,
+                universal_newlines=True)
+        except Exception:
+            pass
 
 BANNER = """
              ..          .       .x+=:.        s
@@ -46,6 +62,9 @@ BANNER = """
 REMOTE_COPY = "scp -o User=root -q"
 REMOTE_EXEC = "ssh -o User=root"
 REMOTE_CMDS_CLEANUP_PATTERN = "ssh -o User=root -O exit -S {}"
+
+
+MIN_SUPPORTED_PYTHON_VERSION = (3, 5)
 
 
 class Error(Exception):
@@ -181,22 +200,59 @@ class CdistObjectError(CdistEntityError):
                          params, stdout_paths, stderr_paths, subject)
 
 
+class CdistObjectExplorerError(CdistEntityError):
+    """
+    Something went wrong while working on a specific
+    cdist object explorer
+    """
+    def __init__(self, cdist_object, explorer_name, explorer_path,
+                 stderr_path, subject=''):
+        params = [
+            ('object name', cdist_object.name, ),
+            ('object path', cdist_object.absolute_path, ),
+            ('object source', " ".join(cdist_object.source), ),
+            ('object type', os.path.realpath(
+                cdist_object.cdist_type.absolute_path), ),
+            ('explorer name', explorer_name, ),
+            ('explorer path', explorer_path, ),
+        ]
+        stdout_paths = []
+        stderr_paths = [
+            ('remote', stderr_path, ),
+        ]
+        super().__init__("explorer '{}' of object '{}'".format(
+            explorer_name, cdist_object.name), params, stdout_paths,
+            stderr_paths, subject)
+
+
 class InitialManifestError(CdistEntityError):
     """Something went wrong while executing initial manifest"""
     def __init__(self, initial_manifest, stdout_path, stderr_path, subject=''):
         params = [
             ('path', initial_manifest, ),
         ]
-        stdout_paths = []
         stdout_paths = [
             ('init', stdout_path, ),
         ]
-        stderr_paths = []
         stderr_paths = [
             ('init', stderr_path, ),
         ]
         super().__init__('initial manifest', params, stdout_paths,
                          stderr_paths, subject)
+
+
+class GlobalExplorerError(CdistEntityError):
+    """Something went wrong while executing global explorer"""
+    def __init__(self, name, path, stderr_path, subject=''):
+        params = [
+            ('name', name, ),
+            ('path', path, ),
+        ]
+        stderr_paths = [
+            ('remote', stderr_path, ),
+        ]
+        super().__init__("global explorer '{}'".format(name),
+                         params, [], stderr_paths, subject)
 
 
 def file_to_list(filename):

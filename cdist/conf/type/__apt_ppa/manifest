@@ -18,13 +18,6 @@
 # along with cdist. If not, see <http://www.gnu.org/licenses/>.
 #
 
-name="$__object_id"
-
 __package software-properties-common
-
-require="__package/software-properties-common" \
-   __file /usr/local/bin/remove-apt-repository \
-   --source "$__type/files/remove-apt-repository" \
-   --mode 0755
 
 require="$__object_name" __apt_update_index

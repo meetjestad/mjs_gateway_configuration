@@ -28,10 +28,12 @@ import argparse
 from cdist import test
 import cdist.argparse as cap
 import logging
+import sys
 
 my_dir = op.abspath(op.dirname(__file__))
 fixtures = op.join(my_dir, 'fixtures')
 interpolation_config_file = op.join(fixtures, "interpolation-test.cfg")
+colored_output_default = 'auto'
 
 
 def newConfigParser():
@@ -153,6 +155,7 @@ class ConfigurationTestCase(test.CdistTestCase):
             'remote_shell': '/bin/sh',
             'inventory_dir': '',
             'cache_path_pattern': '',
+            'colored_output': colored_output_default,
             'conf_dir': '',
             'init_manifest': '',
             'out_path': '',
@@ -184,6 +187,8 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/bin/sh',
                 'inventory_dir': None,
                 'cache_path_pattern': None,
+                'colored_output': cc.ColoredOutputOption.translate(
+                    colored_output_default),
                 'conf_dir': None,
                 'init_manifest': None,
                 'out_path': None,
@@ -390,6 +395,7 @@ class ConfigurationTestCase(test.CdistTestCase):
         args = argparse.Namespace()
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'verbosity': 0,
             },
         }
@@ -440,6 +446,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/bin/sh',
                 'inventory_dir': None,
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': None,
                 'init_manifest': None,
                 'out_path': None,
@@ -515,6 +522,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/var/db/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': ['/opt/cdist', ],
                 'init_manifest': None,
                 'out_path': None,
@@ -556,6 +564,7 @@ class ConfigurationTestCase(test.CdistTestCase):
             'remote_shell': '/bin/sh',
             'inventory_dir': '',
             'cache_path_pattern': '',
+            'colored_output': colored_output_default,
             'conf_dir': '',
             'init_manifest': '',
             'out_path': '',
@@ -579,6 +588,8 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': None,
                 'cache_path_pattern': None,
+                'colored_output': cc.ColoredOutputOption.translate(
+                    colored_output_default),
                 'conf_dir': [
                     '/opt/cdist/conf',
                     '/usr/local/share/cdist/conf',
@@ -623,6 +634,7 @@ class ConfigurationTestCase(test.CdistTestCase):
             'remote_shell': '/bin/sh',
             'inventory_dir': '',
             'cache_path_pattern': '',
+            'colored_output': colored_output_default,
             'conf_dir': '',
             'init_manifest': '',
             'out_path': '',
@@ -645,6 +657,7 @@ class ConfigurationTestCase(test.CdistTestCase):
             'local_shell': '/usr/bin/sh',
             'remote_shell': '/usr/bin/sh',
             'inventory_dir': '/var/db/cdist/inventory',
+            'colored_output': colored_output_default,
             'conf_dir': '/opt/cdist',
             'remote_copy': 'myscp',
             'remote_exec': 'myexec',
@@ -663,6 +676,8 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/var/db/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': cc.ColoredOutputOption.translate(
+                    colored_output_default),
                 'conf_dir': [
                     '/opt/cdist/conf',
                     '/usr/local/share/cdist/conf',
@@ -694,6 +709,7 @@ class ConfigurationTestCase(test.CdistTestCase):
         }
         expected_config = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'verbosity': 0,
             },
         }
@@ -767,6 +783,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/opt/sysadmin/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': [
                     '/opt/cdist/conf',
                     '/usr/local/share/cdist/conf',
@@ -865,6 +882,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/var/db/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': [
                     '/opt/conf/cdist',
                 ],
@@ -964,6 +982,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/var/db/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': [
                     '/opt/conf/cdist',
                 ],
@@ -1063,6 +1082,7 @@ class ConfigurationTestCase(test.CdistTestCase):
                 'remote_shell': '/usr/bin/sh',
                 'inventory_dir': '/var/db/cdist/inventory',
                 'cache_path_pattern': None,
+                'colored_output': colored_output_default,
                 'conf_dir': [
                     '/opt/conf/cdist',
                 ],
@@ -1095,6 +1115,7 @@ class ConfigurationTestCase(test.CdistTestCase):
             'beta': True,
             'inventory_dir': '/var/db/cdist/inventory',
             'cache_path_pattern': None,
+            'colored_output': colored_output_default,
             'conf_dir': [
                 '/opt/conf/cdist',
             ],
@@ -1125,6 +1146,7 @@ class ConfigurationTestCase(test.CdistTestCase):
         expected_config_dict = {
             'GLOBAL': {
                 'inventory_dir': None,
+                'colored_output': colored_output_default,
                 'conf_dir': None,
                 'verbosity': 0,
             },
@@ -1148,6 +1170,7 @@ class ConfigurationTestCase(test.CdistTestCase):
 
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'verbosity': cap.VERBOSE_DEBUG,
             },
         }
@@ -1185,6 +1208,7 @@ class ConfigurationTestCase(test.CdistTestCase):
 
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'save_output_streams': True,
                 'verbosity': 0,
             },
@@ -1213,6 +1237,7 @@ class ConfigurationTestCase(test.CdistTestCase):
 
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'save_output_streams': False,
                 'verbosity': 0,
             },
@@ -1241,6 +1266,7 @@ class ConfigurationTestCase(test.CdistTestCase):
 
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'save_output_streams': False,
                 'verbosity': 0,
             },
@@ -1269,6 +1295,7 @@ class ConfigurationTestCase(test.CdistTestCase):
 
         expected_config_dict = {
             'GLOBAL': {
+                'colored_output': colored_output_default,
                 'save_output_streams': False,
                 'verbosity': 0,
             },
@@ -1295,6 +1322,122 @@ class ConfigurationTestCase(test.CdistTestCase):
         except configparser.InterpolationSyntaxError as e:
             self.fail("Exception should not have been raised: {}".format(
                 e))
+
+    def test_configuration_timestamping_log_1(self):
+        config = newConfigParser()
+        config['GLOBAL'] = {
+            'timestamp': 'True',
+        }
+
+        global_config_file = os.path.join(fixtures, 'cdist-global.cfg')
+        with open(global_config_file, 'w') as f:
+            config.write(f)
+
+        expected_config_dict = {
+            'GLOBAL': {
+                'colored_output': colored_output_default,
+                'timestamp': True,
+                'verbosity': 0,
+            },
+        }
+
+        config_files = (global_config_file, )
+
+        # bypass singleton so we can test further
+        cc.Configuration.instance = None
+
+        args = argparse.Namespace()
+        args.timestamp = True
+        configuration = cc.Configuration(args, env=None,
+                                         config_files=config_files)
+        self.assertEqual(configuration.config, expected_config_dict)
+
+    def test_configuration_timestamping_log_2(self):
+        config = newConfigParser()
+        config['GLOBAL'] = {
+            'timestamp': 'False',
+        }
+
+        global_config_file = os.path.join(fixtures, 'cdist-global.cfg')
+        with open(global_config_file, 'w') as f:
+            config.write(f)
+
+        expected_config_dict = {
+            'GLOBAL': {
+                'colored_output': colored_output_default,
+                'timestamp': True,
+                'verbosity': 0,
+            },
+        }
+
+        config_files = (global_config_file, )
+
+        # bypass singleton so we can test further
+        cc.Configuration.instance = None
+
+        args = argparse.Namespace()
+        args.timestamp = True
+        configuration = cc.Configuration(args, env=None,
+                                         config_files=config_files)
+        self.assertEqual(configuration.config, expected_config_dict)
+
+    def test_configuration_timestamping_log_3(self):
+        config = newConfigParser()
+        config['GLOBAL'] = {
+            'timestamp': 'False',
+        }
+
+        global_config_file = os.path.join(fixtures, 'cdist-global.cfg')
+        with open(global_config_file, 'w') as f:
+            config.write(f)
+
+        expected_config_dict = {
+            'GLOBAL': {
+                'colored_output': colored_output_default,
+                'timestamp': False,
+                'verbosity': 0,
+            },
+        }
+
+        config_files = (global_config_file, )
+
+        # bypass singleton so we can test further
+        cc.Configuration.instance = None
+
+        args = argparse.Namespace()
+        args.timestamp = False
+        configuration = cc.Configuration(args, env=None,
+                                         config_files=config_files)
+        self.assertEqual(configuration.config, expected_config_dict)
+
+    def test_configuration_timestamping_log_4(self):
+        config = newConfigParser()
+        config['GLOBAL'] = {
+            'timestamp': 'True',
+        }
+
+        global_config_file = os.path.join(fixtures, 'cdist-global.cfg')
+        with open(global_config_file, 'w') as f:
+            config.write(f)
+
+        expected_config_dict = {
+            'GLOBAL': {
+                'colored_output': colored_output_default,
+                'timestamp': False,
+                'verbosity': 0,
+            },
+        }
+
+        config_files = (global_config_file, )
+
+        # bypass singleton so we can test further
+        cc.Configuration.instance = None
+
+        args = argparse.Namespace()
+        args.timestamp = False
+        configuration = cc.Configuration(args, env=None,
+                                         config_files=config_files)
+        self.assertEqual(configuration.config, expected_config_dict)
 
 
 if __name__ == "__main__":

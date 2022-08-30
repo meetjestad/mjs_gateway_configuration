@@ -34,11 +34,11 @@ class InvalidTypeError(cdist.Error):
         self.source_path = os.path.realpath(self.type_absolute_path)
 
     def __str__(self):
-        return "Invalid type '%s' at '%s' defined at '%s'" % (
+        return "Invalid type '{}' at '{}' defined at '{}'".format(
                 self.type_path, self.type_absolute_path, self.source_path)
 
 
-class CdistType(object):
+class CdistType:
     """Represents a cdist type.
 
     All interaction with types in cdist should be done through this class.
@@ -47,7 +47,7 @@ class CdistType(object):
 
     """
 
-    log = logging.getLogger("cdist")
+    log = logging.getLogger("cdist-type")
 
     def __init__(self, base_path, name):
         self.base_path = base_path
@@ -69,6 +69,7 @@ class CdistType(object):
         self.__optional_multiple_parameters = None
         self.__boolean_parameters = None
         self.__parameter_defaults = None
+        self.__deprecated_parameters = None
 
     def __hash__(self):
         return hash(self.name)
@@ -81,9 +82,9 @@ class CdistType(object):
                 yield cls(base_path, name)
             except InvalidTypeError as e:
                 # ignore invalid type, log warning and continue
-                msg = "Ignoring invalid type '%s' at '%s' defined at '%s'" % (
-                    e.type_path, e.type_absolute_path, e.source_path)
-                cls.log.warning(msg)
+                cls.log.warning("Ignoring invalid type '%s' at '%s' defined"
+                                " at '%s'", e.type_path, e.type_absolute_path,
+                                e.source_path)
                 # remove invalid from runtime conf dir
                 os.remove(e.type_absolute_path)
 
@@ -108,7 +109,7 @@ class CdistType(object):
         return cls._instances[name]
 
     def __repr__(self):
-        return '<CdistType %s>' % self.name
+        return '<CdistType {}>'.format(self.name)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
@@ -132,6 +133,17 @@ class CdistType(object):
         """Check whether a type is a non parallel, i.e. its objects
            cannot run in parallel."""
         return os.path.isfile(os.path.join(self.absolute_path, "nonparallel"))
+
+    @property
+    def deprecated(self):
+        """Get type deprecation message. If message is None then type
+        is not deprecated."""
+        deprecated_path = os.path.join(self.absolute_path, "deprecated")
+        try:
+            with open(deprecated_path, 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            return None
 
     @property
     def explorers(self):
@@ -264,3 +276,23 @@ class CdistType(object):
             finally:
                 self.__parameter_defaults = defaults
         return self.__parameter_defaults
+
+    @property
+    def deprecated_parameters(self):
+        if not self.__deprecated_parameters:
+            deprecated = {}
+            try:
+                deprecated_dir = os.path.join(self.absolute_path,
+                                              "parameter",
+                                              "deprecated")
+                for name in cdist.core.listdir(deprecated_dir):
+                    try:
+                        with open(os.path.join(deprecated_dir, name)) as fd:
+                            deprecated[name] = fd.read().strip()
+                    except EnvironmentError:
+                        pass  # Swallow errors raised by open() or read()
+            except EnvironmentError:
+                pass  # Swallow error raised by os.listdir()
+            finally:
+                self.__deprecated_parameters = deprecated
+        return self.__deprecated_parameters

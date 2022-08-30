@@ -25,6 +25,9 @@ user
 OPTIONAL PARAMETERS
 -------------------
 
+dirmode
+    forwarded to :strong:`__directory` type as mode
+
 mode
     forwarded to :strong:`__file` type
 
@@ -33,6 +36,12 @@ state
 
 source
     forwarded to :strong:`__file` type
+
+file
+    forwarded to :strong:`__file` type
+    This can be used if multiple users need to have a dotfile updated,
+    which will result in duplicate object id errors. When using the
+    file parameter the object id can be some unique value.
 
 MESSAGES
 --------
@@ -57,6 +66,15 @@ EXAMPLES
 
     # Install default xmonad config for user 'eve'. Parent directory is created automatically.
     __dot_file .xmonad/xmonad.hs --user eve --state exists --source "$__files/xmonad.hs"
+
+    # install .vimrc for root and some users
+    for user in root userx usery userz; do
+        __dot_file "${user}_dot_vimrc" \
+            --user $user \
+            --file .vimrc \
+            --state exists \
+            --source "$__files/$user/.vimrc"
+    done
 
 SEE ALSO
 --------

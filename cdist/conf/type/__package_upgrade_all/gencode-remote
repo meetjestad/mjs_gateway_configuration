@@ -28,6 +28,10 @@ apt_clean="$__object/parameter/apt-clean"
 
 apt_dist_upgrade="$__object/parameter/apt-dist-upgrade"
 
+if [ -f "$__object/parameter/apt-with-new-pkgs" ]; then
+	apt_with_new_pkgs="--with-new-pkgs"
+fi
+
 if [ -f "$type" ]; then
     type="$(cat "$type")"
 else
@@ -53,8 +57,8 @@ case "$type" in
         ;;
     apt)
         if [ -f "$apt_dist_upgrade" ]
-        then echo $aptget dist-upgrade
-        else echo $aptget upgrade
+        then echo "$aptget dist-upgrade"
+        else echo "$aptget $apt_with_new_pkgs upgrade"
         fi
 
         if [ -f "$apt_clean" ]

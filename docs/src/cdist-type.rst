@@ -71,6 +71,31 @@ when using -j option. Example of such a type is __package_dpkg type where dpkg i
 prevents to be run in more than one instance.
 
 
+Deprecated types
+-----------------
+If a type is flagged with 'deprecated' marker then it is considered deprecated.
+When it is used cdist writes warning line. If 'deprecated' marker has content
+then this content is printed as a deprecation messages, e.g.:
+
+.. code-block:: sh
+
+    $ ls -l deprecated 
+    -rw-r--r--  1 darko  darko  71 May 20 18:30 deprecated
+    $ cat deprecated 
+    This type is deprecated. It will be removed in the next minor release.
+    $ echo '__foo foo' | ./bin/cdist config -i - 185.203.112.26
+    WARNING: 185.203.112.26: Type __foo is deprecated: This type is deprecated. It will be removed in the next minor release.
+
+If 'deprecated' marker has no content then general message is printed, e.g.:
+
+.. code-block:: sh
+
+    $ ls -l deprecated 
+    -rw-r--r--  1 darko  darko  0 May 20 18:36 deprecated
+    $ echo '__bar foo' | ./bin/cdist config -i - 185.203.112.26
+    WARNING: 185.203.112.26: Type __bar is deprecated.
+
+
 How to write a new type
 -----------------------
 A type consists of
@@ -92,6 +117,9 @@ executable and have a proper shebang. If they are not executable then cdist assu
 they are written in shell so they are executed using '/bin/sh -e' or 'CDIST_LOCAL_SHELL'.
 
 For executable shell code it is suggested that shebang is '#!/bin/sh -e'.
+
+For creating type skeleton you can use helper script
+`cdist-new-type <man1/cdist-new-type.html>`_.
 
 
 Defining parameters
@@ -158,6 +186,31 @@ Example: (e.g. in cdist/conf/type/__nginx_vhost/manifest)
     fi
 
 
+Deprecated parameters
+---------------------
+To deprecate type parameters one can declare a file for each deprecated
+parameter under **parameter/deprecated** directory.
+
+When such parameter is used cdist writes warning line with deprecation message.
+If such file has content then this content is printed as deprecation message.
+If there is no content then generic parameter deprecation message is printed.
+
+Example:
+
+.. code-block:: sh
+
+    $ ls parameter/deprecated/
+    eggs    spam
+    $ cat parameter/deprecated/eggs
+    eggs parameter is deprecated, please use multiple egg parameter.
+    $ cat parameter/deprecated/spam
+    $ echo '__foo foo --foo foo --eggs eggs' | ./bin/cdist config -i - 185.203.112.26
+    WARNING: 185.203.112.26: eggs parameter of type __foo is deprecated: eggs parameter is deprecated, please use multiple egg parameter.
+    $ echo '__foo foo --foo foo --eggs eggs --spam spam' | ./bin/cdist config -i - 185.203.112.26
+    WARNING: 185.203.112.26: spam parameter of type __foo is deprecated.
+    WARNING: 185.203.112.26: eggs parameter of type __foo is deprecated: eggs parameter is deprecated, please use multiple egg parameter.
+
+
 Input from stdin
 ----------------
 Every type can access what has been written on stdin when it has been called.
@@ -186,6 +239,73 @@ In the __file type, stdin is used as source for the file, if - is used for sourc
             source="$__object/stdin"
         fi  
     ....
+
+
+Stdin inside a loop
+~~~~~~~~~~~~~~~~~~~
+Since cdist saves type's stdin content in the object as **$__object/stdin**,
+so it can be accessed in manifest and gencode-* scripts, this can lead to
+unexpected behavior. For example, suppose you have some type with the following
+in its manifest:
+
+.. code-block:: sh
+
+    if [ -f "$__object/parameter/foo" ]
+    then
+        while read -r l
+        do
+            __file "$l"
+            echo "$l" >&2
+        done < "$__object/parameter/foo"
+    fi
+
+and init manifest:
+
+.. code-block:: sh
+
+    __foo foo --foo a --foo b --foo c
+
+You expect that manifest stderr content is:
+
+.. code-block:: sh
+
+    a
+    b
+    c
+
+and that files *a*, *b* and *c* are created. But all you get in manifest stderr
+is:
+
+.. code-block:: sh
+
+    a
+
+and only *a* file is created.
+
+When redirecting parameter *foo* file content to while's stdin that means that all
+commands in while body have this same stdin. So when *__file* type gets executed,
+cdist saves its stdin which means it gets the remaining content of parameter *foo*
+file, i.e.:
+
+.. code-block:: sh
+
+    b
+    c
+
+The solution is to make sure that your types inside such loops get their stdin
+from somewhere else, e.g. for the above problem *__file* type can get empty
+stdin from */dev/null*:
+
+.. code-block:: sh
+
+    if [ -f "$__object/parameter/foo" ]
+    then
+        while read -r l
+        do
+            __file "$l" < /dev/null
+            echo "$l" >&2
+        done < "$__object/parameter/foo"
+    fi
 
 
 Writing the manifest
@@ -366,6 +486,15 @@ cdist log level can be accessed from __cdist_log_level variable.One of:
     | TRACE          | 5               |
     +----------------+-----------------+
 
+
+It is available for initial manifest, explorer, type manifest,
+type explorer, type gencode.
+
+
+Detecting dry run
+-----------------
+
+If ``$__cdist_dry_run`` environment variable is set, then it's dry run.
 
 It is available for initial manifest, explorer, type manifest,
 type explorer, type gencode.

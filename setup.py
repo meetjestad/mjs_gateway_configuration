@@ -1,7 +1,27 @@
 from distutils.core import setup
-import cdist
+from distutils.errors import DistutilsError
 import os
 import re
+import subprocess
+
+
+# We have it only if it is a git cloned repo.
+build_helper = os.path.join('bin', 'cdist-build-helper')
+# Version file path.
+version_file = os.path.join('cdist', 'version.py')
+# If we have build-helper we could be a git repo.
+if os.path.exists(build_helper):
+    # Try to generate version.py.
+    rv = subprocess.run([build_helper, 'version', ])
+    if rv.returncode != 0:
+        raise DistutilsError("Failed to generate {}".format(version_file))
+else:
+    # Otherwise, version.py should be present.
+    if not os.path.exists(version_file):
+        raise DistutilsError("Missing version file {}".format(version_file))
+
+
+import cdist  # noqa
 
 
 def data_finder(data_dir):
@@ -25,6 +45,7 @@ def data_finder(data_dir):
 
     return entries
 
+
 cur = os.getcwd()
 os.chdir("cdist")
 package_data = data_finder("conf")
@@ -33,19 +54,18 @@ os.chdir(cur)
 
 setup(
     name="cdist",
-    packages=["cdist", "cdist.core", "cdist.exec", "cdist.util", ],
+    packages=["cdist", "cdist.core", "cdist.exec", "cdist.scan", "cdist.util"],
     package_data={'cdist': package_data},
-    scripts=["scripts/cdist"],
+    scripts=["bin/cdist", "bin/cdist-dump", "bin/cdist-new-type"],
     version=cdist.version.VERSION,
     description="A Usable Configuration Management System",
-    author="Nico Schottelius",
-    author_email="nico-cdist-pypi@schottelius.org",
-    url="http://www.nico.schottelius.org/software/cdist/",
+    author="cdist contributors",
+    url="https://cdi.st",
     classifiers=[
         "Development Status :: 6 - Mature",
         "Environment :: Console",
         "Intended Audience :: System Administrators",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",  # noqa
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX",
         "Operating System :: POSIX :: BSD",

@@ -39,7 +39,7 @@ import cdist.exec.util as util
 CONF_SUBDIRS_LINKED = ["explorer", "files", "manifest", "type", ]
 
 
-class Local(object):
+class Local:
     """Execute commands locally.
 
     All interaction with the local side should be done through this class.
@@ -69,7 +69,6 @@ class Local(object):
 
         self.exec_path = exec_path
         self.custom_initial_manifest = initial_manifest
-        self._add_conf_dirs = add_conf_dirs
         self.cache_path_pattern = cache_path_pattern
         self.quiet_mode = quiet_mode
         if configuration:
@@ -84,16 +83,7 @@ class Local(object):
         self._init_cache_dir(None)
         self._init_paths()
         self._init_object_marker()
-        self._init_conf_dirs()
-
-    @property
-    def dist_conf_dir(self):
-        return os.path.abspath(os.path.join(os.path.dirname(cdist.__file__),
-                                            "conf"))
-
-    @property
-    def home_dir(self):
-        return cdist.home_dir()
+        self._init_conf_dirs(add_conf_dirs)
 
     def _init_log(self):
         self.log = logging.getLogger(self.target_host[0])
@@ -140,28 +130,9 @@ class Local(object):
         # Does not need to be secure - just randomly different from .cdist
         self.object_marker_name = tempfile.mktemp(prefix='.cdist-', dir='')
 
-    def _init_conf_dirs(self):
-        self.conf_dirs = []
-
-        self.conf_dirs.append(self.dist_conf_dir)
-
-        # Is the default place for user created explorer, type and manifest
-        if self.home_dir:
-            self.conf_dirs.append(self.home_dir)
-
-        # Add directories defined in the CDIST_PATH environment variable
-        # if 'CDIST_PATH' in os.environ:
-        #     cdist_path_dirs = re.split(r'(?<!\\):', os.environ['CDIST_PATH'])
-        #     cdist_path_dirs.reverse()
-        #     self.conf_dirs.extend(cdist_path_dirs)
-        if 'conf_dir' in self.configuration:
-            conf_dirs = self.configuration['conf_dir']
-            if conf_dirs:
-                self.conf_dirs.extend(conf_dirs)
-
-        # Add command line supplied directories
-        if self._add_conf_dirs:
-            self.conf_dirs.extend(self._add_conf_dirs)
+    def _init_conf_dirs(self, add_conf_dirs):
+        self.conf_dirs = util.resolve_conf_dirs(
+            self.configuration, add_conf_dirs=add_conf_dirs)
 
     def _init_directories(self):
         self.mkdir(self.conf_path)
@@ -181,16 +152,17 @@ class Local(object):
 
     def _setup_object_marker_file(self):
         with open(self.object_marker_file, 'w') as fd:
-            fd.write("%s\n" % self.object_marker_name)
+            fd.write("{}\n".format(self.object_marker_name))
 
-        self.log.trace("Object marker %s saved in %s" % (
-            self.object_marker_name, self.object_marker_file))
+        self.log.trace("Object marker %s saved in %s",
+                       self.object_marker_name, self.object_marker_file)
 
     def _init_cache_dir(self, cache_dir):
+        home_dir = cdist.home_dir()
         if cache_dir:
             self.cache_path = cache_dir
-        elif self.home_dir:
-            self.cache_path = os.path.join(self.home_dir, "cache")
+        elif home_dir:
+            self.cache_path = os.path.join(home_dir, "cache")
         else:
             raise cdist.Error(
                 "No homedir setup and no cache dir location given")
@@ -212,7 +184,7 @@ class Local(object):
 
         """
         assert isinstance(command, (list, tuple)), (
-                "list or tuple argument expected, got: %s" % command)
+                "list or tuple argument expected, got: {}".format(command))
 
         quiet = self.quiet_mode or quiet_mode
         do_save_output = save_output and not quiet and self.save_output_streams
@@ -317,14 +289,12 @@ class Local(object):
         return cache_subpath
 
     def save_cache(self, start_time=time.time()):
-        self.log.trace("cache subpath pattern: {}".format(
-            self.cache_path_pattern))
+        self.log.trace("cache subpath pattern: %s", self.cache_path_pattern)
         cache_subpath = self._cache_subpath(start_time,
                                             self.cache_path_pattern)
-        self.log.debug("cache subpath: {}".format(cache_subpath))
+        self.log.debug("cache subpath: %s", cache_subpath)
         destination = os.path.join(self.cache_path, cache_subpath)
-        self.log.trace(("Saving cache: " + self.base_path + " to " +
-                        destination))
+        self.log.trace("Saving cache %s to %s", self.base_path, destination)
 
         if not os.path.exists(destination):
             shutil.move(self.base_path, destination)
@@ -360,7 +330,7 @@ class Local(object):
 
         # Iterate over all directories and link the to the output dir
         for conf_dir in self.conf_dirs:
-            self.log.debug("Checking conf_dir %s ..." % (conf_dir))
+            self.log.debug("Checking conf_dir %s ...", conf_dir)
             for sub_dir in CONF_SUBDIRS_LINKED:
                 current_dir = os.path.join(conf_dir, sub_dir)
 
@@ -378,12 +348,13 @@ class Local(object):
                     if os.path.exists(dst):
                         os.unlink(dst)
 
-                    self.log.trace("Linking %s to %s ..." % (src, dst))
+                    self.log.trace("Linking %s to %s ...", src, dst)
                     try:
                         os.symlink(src, dst)
                     except OSError as e:
-                        raise cdist.Error("Linking %s %s to %s failed: %s" % (
-                            sub_dir, src, dst, e.__str__()))
+                        raise cdist.Error(
+                            "Linking {} {} to {} failed: {}".format(
+                                sub_dir, src, dst, e.__str__()))
 
     def _link_types_for_emulator(self):
         """Link emulator to types"""
@@ -396,5 +367,5 @@ class Local(object):
                 os.symlink(src, dst)
             except OSError as e:
                 raise cdist.Error(
-                        "Linking emulator from %s to %s failed: %s" % (
+                        "Linking emulator from {} to {} failed: {}".format(
                             src, dst, e.__str__()))

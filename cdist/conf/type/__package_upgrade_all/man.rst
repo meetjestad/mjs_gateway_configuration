@@ -33,6 +33,14 @@ BOOLEAN PARAMETERS
 apt-dist-upgrade
     Do dist-upgrade instead of upgrade.
 
+apt-with-new-pkg
+    Allow installing new packages when used in conjunction with
+    upgrade. This is useful if the update of an installed package
+    requires new dependencies to be installed. Instead of holding the
+    package back upgrade will upgrade the package and install the new
+    dependencies. Note that upgrade with this option will never remove
+    packages, only allow adding new ones.
+
 apt-clean
     Clean out the local repository of retrieved package files.
 

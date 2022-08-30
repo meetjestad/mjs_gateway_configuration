@@ -23,7 +23,6 @@
 
 import os
 import shutil
-import tempfile
 
 from cdist import test
 from cdist import core
@@ -45,7 +44,7 @@ expected_object_names = sorted([
     '__third/moon'])
 
 
-class CdistObjectErrorContext(object):
+class CdistObjectErrorContext:
     def __init__(self, original_error):
         self.original_error = original_error
 
@@ -203,7 +202,7 @@ class ConfigRunTestCase(test.CdistTestCase):
             host_dir_name=self.hostdir,
             # exec_path can not derivated from sys.argv in case of unittest
             exec_path=os.path.abspath(os.path.join(
-                my_dir, '../../../scripts/cdist')),
+                my_dir, '../../../bin/cdist')),
             initial_manifest=os.path.join(fixtures,
                                           'manifest/dryrun_manifest'),
             add_conf_dirs=[fixtures])
@@ -212,7 +211,7 @@ class ConfigRunTestCase(test.CdistTestCase):
         dryrun.run()
         # if we are here, dryrun works like expected
 
-    def test_desp_resolver(self):
+    def test_deps_resolver(self):
         """Test to show dependency resolver warning message."""
         local = cdist.exec.local.Local(
             target_host=self.target_host,
@@ -220,7 +219,7 @@ class ConfigRunTestCase(test.CdistTestCase):
             base_root_path=self.host_base_path,
             host_dir_name=self.hostdir,
             exec_path=os.path.abspath(os.path.join(
-                my_dir, '../../../scripts/cdist')),
+                my_dir, '../../../bin/cdist')),
             initial_manifest=os.path.join(
                 fixtures, 'manifest/init-deps-resolver'),
             add_conf_dirs=[fixtures])
@@ -228,6 +227,71 @@ class ConfigRunTestCase(test.CdistTestCase):
         # dry_run is ok for dependency testing
         config = cdist.config.Config(local, self.remote, dry_run=True)
         config.run()
+
+    def test_graph_check_cycle_empty(self):
+        graph = {}
+        has_cycle, path = cdist.config.graph_check_cycle(graph)
+        self.assertFalse(has_cycle)
+
+    def test_graph_check_cycle_1(self):
+        #
+        # a -> b -> c
+        #      |
+        #      +--> d -> e
+        graph = {
+            'a': ['b', ],
+            'b': ['c', 'd', ],
+            'd': ['e', ],
+        }
+        has_cycle, path = cdist.config.graph_check_cycle(graph)
+        self.assertFalse(has_cycle)
+
+    def test_graph_check_cycle_2(self):
+        #
+        # a -> b -> c
+        # /\        |
+        #  \        |
+        #   +-------+
+        graph = {
+            'a': ['b', ],
+            'b': ['c', ],
+            'c': ['a', ],
+        }
+        has_cycle, path = cdist.config.graph_check_cycle(graph)
+        self.assertTrue(has_cycle)
+        self.assertGreater(path.count(path[-1]), 1)
+
+    def test_graph_check_cycle_3(self):
+        #
+        # a -> b -> c
+        #  \        \
+        #   \        +--> g
+        #    \            /\
+        #     \           /|
+        #      +-> d -> e  |
+        #           \      |
+        #            + --> f
+        #
+        # h -> i --> j
+        # |    /\    |
+        # \/    |    \/
+        # n     m <- k
+        graph = {
+            'a': ['b', 'd', ],
+            'b': ['c', ],
+            'c': ['g', ],
+            'd': ['e', 'f', ],
+            'e': ['g', ],
+            'f': ['g', ],
+            'h': ['i', 'n', ],
+            'i': ['j', ],
+            'j': ['k', ],
+            'k': ['m', ],
+            'm': ['i', ],
+        }
+        has_cycle, path = cdist.config.graph_check_cycle(graph)
+        self.assertTrue(has_cycle)
+        self.assertGreater(path.count(path[-1]), 1)
 
 
 # Currently the resolving code will simply detect that this object does

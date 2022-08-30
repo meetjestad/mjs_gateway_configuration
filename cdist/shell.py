@@ -32,10 +32,8 @@ import cdist.config
 log = logging.getLogger(__name__)
 
 
-class Shell(object):
-
+class Shell:
     def __init__(self, shell=None):
-
         self.shell = shell
 
         self.target_host = (
@@ -67,7 +65,7 @@ class Shell(object):
     def _init_environment(self):
         self.env = os.environ.copy()
         additional_env = {
-            'PATH': "%s:%s" % (self.local.bin_path, os.environ['PATH']),
+            'PATH': "{}:{}".format(self.local.bin_path, os.environ['PATH']),
             # for use in type emulator
             '__cdist_type_base_path': self.local.type_path,
             '__cdist_manifest': "cdist shell",

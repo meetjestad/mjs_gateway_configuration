@@ -27,7 +27,7 @@ for that. This type will:
 - configure nginx.
 
 Our type will not create the actual python application. Its intention is only
-to configure hosing for specified user and project. It is up to the user to
+to configure hosting for specified user and project. It is up to the user to
 create his/her applications.
 
 So let's start.
@@ -198,7 +198,7 @@ We require package uWSGI present in order to create **/etc/uwsgi/apps-enabled/$u
 Installation of uWSGI also creates configuration layout: **/etc/uwsgi/apps-enabled**.
 If this directory does not exist then **__file** type would error.
 We also use stdin as file content source. For details see `Input from stdin <cdist-type.html#input-from-stdin>`_.
-For feading stdin we use here-document (**<<** operator). It allows redirection of subsequent
+For feeding stdin we use here-document (**<<** operator). It allows redirection of subsequent
 lines read by the shell to the input of a command until a line containing only the delimiter
 and a newline, with no blank characters in between (EOF in our case).
 
@@ -480,7 +480,7 @@ Creating python bottle application
 
 We now need to create Bottle application. As you remember from the beginning
 of this walkthrough our type does not create the actual python application,
-its intention is only to configure hosing for specified user and project.
+its intention is only to configure hosting for specified user and project.
 It is up to the user to create his/her applications.
 
 Become app user::
@@ -546,7 +546,7 @@ we have changed our **wsgi.py** file uWSGI reloads the application.
 
 Our application selects and lists items from **items** table.
 
-Openning application
+Opening application
 ~~~~~~~~~~~~~~~~~~~~
 
 Finally try the application::

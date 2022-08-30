@@ -13,15 +13,18 @@ See sshd_config(5) and ssh-keygen(1).
 Speeding up ssh connections
 ---------------------------
 When connecting to a new host, the initial delay with ssh connections
-is pretty big. You can work around this by
-"sharing of multiple sessions over a single network connection"
-(quote from ssh_config(5)). The following code is suitable for
-inclusion into your ~/.ssh/config::
+is pretty big. As cdist makes many connections to each host successive
+connections can be sped up by "sharing of multiple sessions over a single
+network connection" (quote from ssh_config(5)). This is also called "connection
+multiplexing".
 
-    Host *
-      ControlPath ~/.ssh/master-%l-%r@%h:%p
-      ControlMaster auto
-      ControlPersist 10
+Cdist implements this since v4.0.0 by executing ssh with the appropriate
+options (`-o ControlMaster=auto  -o ControlPath=/tmp/<tmpdir>/s  -o
+ControlPersist=2h`).
+
+Note that the sshd_config on the server can configure the maximum number of
+parallel multiplexed connections this with `MaxSessions N` (N defaults to 10
+for OpenSSH v7.4).
 
 
 Speeding up shell execution
@@ -197,15 +200,15 @@ of cdist:
 .. code-block:: sh
 
     # Singleton type without parameter
-    echo __ungleich_munin_server | cdist --initial-manifest - munin.panter.ch
+    echo __ungleich_munin_server | cdist config --initial-manifest - munin.panter.ch
 
     # Singleton type with parameter
     echo __ungleich_munin_node --allow 1.2.3.4 | \
-        cdist --initial-manifest - rails-19.panter.ch
+        cdist config --initial-manifest - rails-19.panter.ch
 
     # Normal type
     echo __file /tmp/stdintest --mode 0644 | \
-        cdist --initial-manifest - cdist-dev-01.ungleich.ch
+        cdist config --initial-manifest - cdist-dev-01.ungleich.ch
 
 
 Other content in cdist repository
@@ -221,3 +224,55 @@ in the repository for such content: It allows you to
 easily distinguish what is used by cdist and what is not
 and also to store all important files in one
 repository.
+
+
+Notes on CDIST_ORDER_DEPENDENCY
+-------------------------------
+With CDIST_ORDER_DEPENDENCY all types are executed in the order in which they
+are created in the manifest. The current created object automatically depends
+on the previously created object.
+
+It essentially helps you to build up blocks of code that build upon each other
+(like first creating the directory xyz than the file below the directory).
+
+This can be helpful, but one must be aware of its side effects.
+
+
+CDIST_ORDER_DEPENDENCY kills parallelization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Suppose you have defined CDIST_ORDER_DEPENDENCY and then, among other things,
+you specify creation of three, by nature independent, files.
+
+**init**
+
+.. code-block:: sh
+
+   CDIST_ORDER_DEPENDENCY=1
+   export CDIST_ORDER_DEPENDENCY
+
+   ...
+   __file /tmp/file1
+   __file /tmp/file2
+   __file /tmp/file3
+   ...
+
+Due to defined CDIST_ORDER_DEPENDENCY cdist will execute them in specified order.
+It is better to use CDIST_ORDER_DEPENDENCY in well defined blocks:
+
+**init**
+
+.. code-block:: sh
+
+   CDIST_ORDER_DEPENDENCY=1
+   export CDIST_ORDER_DEPENDENCY
+   ...
+   unset CDIST_ORDER_DEPENDENCY
+
+   __file /tmp/file1
+   __file /tmp/file2
+   __file /tmp/file3
+
+   CDIST_ORDER_DEPENDENCY=1
+   export CDIST_ORDER_DEPENDENCY
+   ...
+   unset CDIST_ORDER_DEPENDENCY

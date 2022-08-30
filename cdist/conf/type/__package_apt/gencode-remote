@@ -42,6 +42,13 @@ else
    target_release=""
 fi
 
+if [ -f "$__object/parameter/install-recommends" ]; then
+    # required if __apt_norecommends is used
+    recommendsparam="-o APT::Install-Recommends=1"
+else
+    recommendsparam="-o APT::Install-Recommends=0"
+fi
+
 if [ -f "$__object/parameter/purge-if-absent" ]; then
 	purgeparam="--purge"
 else
@@ -62,26 +69,46 @@ case "$state_is" in
     ;;
 esac
 
-# Hint if we need to avoid questions at some point:
-# DEBIAN_PRIORITY=critical can reduce the number of questions
-aptget="DEBIAN_FRONTEND=noninteractive apt-get --quiet --yes --no-install-recommends -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
-
 if [ "$state_is" = "$state_should" ]; then
     if [ -z "$version" ] || [ "$version" = "$version_is" ]; then
         exit 0;
     fi
 fi
 
+# Hint if we need to avoid questions at some point:
+# DEBIAN_PRIORITY=critical can reduce the number of questions
+aptget="DEBIAN_FRONTEND=noninteractive apt-get --quiet --yes -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+
 case "$state_should" in
     present)
+        # There are special arguments to apt(8) to prevent aborts if apt woudn't been
+        # updated after the 19th April 2021 till the bullseye release. The additional
+        # arguments acknoledge the happend suite change (the apt(8) update does the
+        # same by itself).
+        #
+        # Using '-o $config' instead of the --allow-releaseinfo-change-* parameter
+        # allows backward compatablility to pre-buster Debian versions.
+        #
+        # See more: ticket #861
+        # https://code.ungleich.ch/ungleich-public/cdist/-/issues/861
+        apt_opts="-o Acquire::AllowReleaseInfoChange::Suite=true -o Acquire::AllowReleaseInfoChange::Version=true"
+
+        # following is bit ugly, but important hack.
+        # due to how cdist config run works, there isn't
+        # currently better way to do it :(
+        cat << EOF
+if [ ! -f /var/cache/apt/pkgcache.bin ] || [ "\$( stat --format %Y /var/cache/apt/pkgcache.bin )" -lt "\$( date +%s -d '-1 day' )" ]
+then echo apt-get $apt_opts update > /dev/null 2>&1 || true
+fi
+EOF
         if [ -n "$version" ]; then
             name="${name}=${version}"
         fi
-        echo "$aptget install $target_release \"$name\""
+        echo "$aptget $recommendsparam install $target_release '$name'"
         echo "installed" >> "$__messages_out"
     ;;
     absent)
-        echo "$aptget remove $purgeparam \"$name\""
+        echo "$aptget remove $purgeparam '$name'"
         echo "removed" >> "$__messages_out"
     ;;
     *)

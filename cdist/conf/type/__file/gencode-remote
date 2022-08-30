@@ -1,7 +1,7 @@
 #!/bin/sh -e
 #
 # 2011-2013 Nico Schottelius (nico-cdist at schottelius.org)
-# 2013 Steven Armstrong (steven-cdist armstrong.cc)
+# 2013-2022 Steven Armstrong (steven-cdist armstrong.cc)
 #
 # This file is part of cdist.
 #
@@ -23,7 +23,7 @@ destination="/$__object_id"
 state_should="$(cat "$__object/parameter/state")"
 type="$(cat "$__object/explorer/type")"
 stat_file="$__object/explorer/stat"
-
+fire_onchange=''
 
 get_current_value() {
     if [ -s "$stat_file" ]; then
@@ -43,52 +43,82 @@ get_current_value() {
 }
 
 set_group() {
-    echo chgrp \"$1\" \"$destination\"
-    echo chgrp $1 >> "$__messages_out"
+    echo "chgrp '$1' '$destination'"
+    echo "chgrp '$1'" >> "$__messages_out"
+    fire_onchange=1
 }
 
 set_owner() {
-    echo chown \"$1\" \"$destination\"
-    echo chown $1 >> "$__messages_out"
+    echo "chown '$1' '$destination'"
+    echo "chown '$1'" >> "$__messages_out"
+    fire_onchange=1
 }
 
 set_mode() {
-   echo chmod \"$1\" \"$destination\"
-   echo chmod $1 >> "$__messages_out"
+    echo "chmod '$1' '$destination'"
+    echo "chmod '$1'" >> "$__messages_out"
+    fire_onchange=1
 }
 
-set_attributes=
 case "$state_should" in
-    present|exists|pre-exists)
-    # Note: Mode - needs to happen last as a chown/chgrp can alter mode by
-    #  clearing S_ISUID and S_ISGID bits (see chown(2))
-    for attribute in group owner mode; do
-        if [ -f "$__object/parameter/$attribute" ]; then
-            value_should="$(cat "$__object/parameter/$attribute")"
-
-            # change 0xxx format to xxx format => same as stat returns
-            if [ "$attribute" = mode ]; then
-                value_should="$(echo $value_should | sed 's/^0\(...\)/\1/')"
-            fi
-            
-            value_is="$(get_current_value "$attribute" "$value_should")"
-            if [ -f "$__object/files/set-attributes" -o "$value_should" != "$value_is" ]; then
-                "set_$attribute" "$value_should"
-            fi
+    present|exists)
+        if [ -f "$__object/files/upload-destination" ]; then
+            final_destination="$destination"
+            # We change the 'global' $destination variable here so we can
+            # change attributes of the new/uploaded file before moving it
+            # to it's final destination.
+            destination="$(cat "$__object/files/upload-destination")"
         fi
-    done
+        # Note: Mode - needs to happen last as a chown/chgrp can alter mode by
+        #  clearing S_ISUID and S_ISGID bits (see chown(2))
+        for attribute in group owner mode; do
+            if [ -f "$__object/parameter/$attribute" ]; then
+                value_should="$(cat "$__object/parameter/$attribute")"
 
+                # format mode in four digits => same as stat returns
+                if [ "$attribute" = mode ]; then
+                    # Convert to four-digit octal number (printf interprets
+                    # strings with leading 0s as octal!)
+                    value_should=$(printf '%04o' "0${value_should}")
+                fi
+
+                value_is="$(get_current_value "$attribute" "$value_should")"
+                if [ -f "$__object/files/set-attributes" ] || [ "$value_should" != "$value_is" ]; then
+                    "set_$attribute" "$value_should"
+                fi
+            fi
+        done
+        if [ -f "$__object/files/upload-destination" ]; then
+            # move uploaded file into place
+            printf 'rm -rf "%s"\n' "$final_destination"
+            printf 'mv "%s" "%s"\n' "$destination" "$final_destination"
+        fi
+        if [ -f "$__object/files/set-attributes" ]; then
+            # set-attributes is created if file is created or uploaded in gencode-local
+            fire_onchange=1
+        fi
     ;;
 
     absent)
         if [ "$type" = "file" ]; then
-            echo rm -f \"$destination\"
+            echo "rm -f '$destination'"
             echo remove >> "$__messages_out"
+            fire_onchange=1
         fi
     ;;
+
+    pre-exists)
+        :
+        ;;
 
     *)
         echo "Unknown state: $state_should" >&2
         exit 1
     ;;
 esac
+
+if [ -f "$__object/parameter/onchange" ]; then
+    if [ -n "$fire_onchange" ]; then
+        cat "$__object/parameter/onchange"
+    fi
+fi

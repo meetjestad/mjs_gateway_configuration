@@ -1,19 +1,21 @@
 #!/bin/sh
 
-export key="$(cat "$__object/parameter/key" 2>/dev/null \
+key="$(cat "$__object/parameter/key" 2>/dev/null \
    || echo "$__object_id")"
-export state="$(cat "$__object/parameter/state")"
+state="$(cat "$__object/parameter/state")"
 
 file="$(cat "$__object/parameter/file")"
 
-export delimiter="$(cat "$__object/parameter/delimiter")"
-export value="$(cat "$__object/parameter/value" 2>/dev/null \
+delimiter="$(cat "$__object/parameter/delimiter")"
+value="$(cat "$__object/parameter/value" 2>/dev/null \
    || echo "__CDIST_NOTSET__")"
+export key state delimiter value
 if [ -f "$__object/parameter/exact_delimiter" ]; then
-    export exact_delimiter=1
+    exact_delimiter=1
 else
-    export exact_delimiter=0
+    exact_delimiter=0
 fi
+export exact_delimiter
 
 tmpfile=$(mktemp "${file}.cdist.XXXXXXXXXX")
 # preserve ownership and permissions by copying existing file over tmpfile
@@ -22,7 +24,10 @@ if [ -f "$file" ]; then
 else
     touch "$file"
 fi
-awk -f - "$file" >"$tmpfile" <<"AWK_EOF"
+
+awk_bin=$(PATH=$(getconf PATH 2>/dev/null) && command -v awk || echo awk)
+
+"${awk_bin}" -f - "$file" >"$tmpfile" <<"AWK_EOF"
 BEGIN {
     # import variables in a secure way ..
     state=ENVIRON["state"]

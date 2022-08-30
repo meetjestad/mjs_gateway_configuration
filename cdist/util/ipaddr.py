@@ -42,11 +42,8 @@ def resolve_target_host_name(host, family=0):
         # gethostbyaddr returns triple
         # (hostname, aliaslist, ipaddrlist)
         host_name = socket.gethostbyaddr(ip_addr)[0]
-        log.debug("derived host_name for host \"{}\": {}".format(
-            host, host_name))
+        log.debug("derived host_name for host \"%s\": %s", host, host_name)
     except (socket.gaierror, socket.herror) as e:
-        log.warning("Could not derive host_name for {}"
-                    ", $host_name will be empty. Error is: {}".format(host, e))
         # in case of error provide empty value
         host_name = ''
     return host_name
@@ -56,11 +53,8 @@ def resolve_target_fqdn(host):
     log = logging.getLogger(host)
     try:
         host_fqdn = socket.getfqdn(host)
-        log.debug("derived host_fqdn for host \"{}\": {}".format(
-            host, host_fqdn))
+        log.debug("derived host_fqdn for host \"%s\": %s", host, host_fqdn)
     except socket.herror as e:
-        log.warning("Could not derive host_fqdn for {}"
-                    ", $host_fqdn will be empty. Error is: {}".format(host, e))
         # in case of error provide empty value
         host_fqdn = ''
     return host_fqdn

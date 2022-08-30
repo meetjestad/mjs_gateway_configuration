@@ -50,18 +50,21 @@ state
       create or modify it
 
 group
-   Group to chgrp to.
+   Group to chgrp to. Defaults to ``root``.
 
 mode
-   Unix permissions, suitable for chmod.
+   Unix permissions, suitable for chmod. Defaults to a very secure ``0600``.
 
 owner
-   User to chown to.
+   User to chown to. Defaults to ``root``.
 
 source
    If supplied, copy this file from the host running cdist to the target.
    If not supplied, an empty file or directory will be created.
    If source is '-' (dash), take what was written to stdin as the file content.
+
+onchange
+   The code to run if file is modified.
 
 MESSAGES
 --------

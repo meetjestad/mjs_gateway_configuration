@@ -80,30 +80,33 @@ class NoInitialManifestError(cdist.Error):
 
         if user_supplied:
             if os.path.islink(manifest_path):
-                self.message = "%s: %s -> %s" % (
-                        msg_header, manifest_path,
-                        os.path.realpath(manifest_path))
+                self.message = "{}: {} -> {}".format(
+                    msg_header, manifest_path, os.path.realpath(manifest_path))
             else:
-                self.message = "%s: %s" % (msg_header, manifest_path)
+                self.message = "{}: {}".format(msg_header, manifest_path)
         else:
-            self.message = "%s" % (msg_header)
+            self.message = "{}".format(msg_header)
 
     def __str__(self):
         return repr(self.message)
 
 
-class Manifest(object):
+class Manifest:
     """Executes cdist manifests.
 
     """
-    def __init__(self, target_host, local):
+
+    ORDER_DEP_STATE_NAME = 'order_dep_state'
+    TYPEORDER_DEP_NAME = 'typeorder_dep'
+
+    def __init__(self, target_host, local, dry_run=False):
         self.target_host = target_host
         self.local = local
 
         self._open_logger()
 
         self.env = {
-            'PATH': "%s:%s" % (self.local.bin_path, os.environ['PATH']),
+            'PATH': "{}:{}".format(self.local.bin_path, os.environ['PATH']),
             # for use in type emulator
             '__cdist_type_base_path': self.local.type_path,
             '__global': self.local.base_path,
@@ -115,7 +118,12 @@ class Manifest(object):
             '__cdist_log_level': util.log_level_env_var_val(self.log),
             '__cdist_log_level_name': util.log_level_name_env_var_val(
                 self.log),
+            '__cdist_colored_log': str(
+                cdist.log.CdistFormatter.USE_COLORS).lower(),
         }
+
+        if dry_run:
+            self.env['__cdist_dry_run'] = '1'
 
     def _open_logger(self):
         self.log = logging.getLogger(self.target_host[0])
@@ -152,7 +160,7 @@ class Manifest(object):
             raise NoInitialManifestError(initial_manifest, user_supplied)
 
         message_prefix = "initialmanifest"
-        self.log.verbose("Running initial manifest " + initial_manifest)
+        self.log.verbose("Running initial manifest %s", initial_manifest)
         which = "init"
         if self.local.save_output_streams:
             stderr_path = os.path.join(self.local.stderr_base_path, which)
@@ -209,3 +217,13 @@ class Manifest(object):
                     type_manifest,
                     env=self.env_type_manifest(cdist_object),
                     message_prefix=message_prefix)
+
+    def cleanup(self):
+        def _rm_file(fname):
+            try:
+                self.log.trace("[ORDER_DEP] Removing %s", fname)
+                os.remove(os.path.join(self.local.base_path, fname))
+            except FileNotFoundError:
+                pass
+        _rm_file(Manifest.ORDER_DEP_STATE_NAME)
+        _rm_file(Manifest.TYPEORDER_DEP_NAME)

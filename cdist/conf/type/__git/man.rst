@@ -35,6 +35,12 @@ mode
 owner
    User to chown to.
 
+recursive
+   Passes the --recurse-submodules flag to git when cloning the repository.
+
+shallow
+   Sets --depth=1 and --shallow-submodules for cloning repositories with big history.
+
 
 EXAMPLES
 --------
@@ -44,7 +50,7 @@ EXAMPLES
     __git /home/services/dokuwiki --source git://github.com/splitbrain/dokuwiki.git
 
     # Checkout cdist, stay on branch 2.1
-    __git /home/nico/cdist --source git://github.com/ungleich/cdist.git --branch 2.1
+    __git /home/nico/cdist --source git@code.ungleich.ch:ungleich-public/cdist.git --branch 2.1
 
 
 AUTHORS

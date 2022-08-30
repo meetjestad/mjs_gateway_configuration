@@ -13,11 +13,12 @@ storage_path="$(cat "$__object/parameter/storage-path")"
 rule_files="$(cat "$__object/parameter/rule-files")"
 
 # explorer in kB => convert; by default we go with 1/2 RAM
-[ "$target_heap_size" = "auto" ] && target_heap_size=$(($(cat $__global/explorer/memory)*1024/2))
+[ "$target_heap_size" = "auto" ] && target_heap_size=$(($(cat "$__global/explorer/memory")*1024/2))
 
 ##### INSTALL THE PACKAGE ###################################################
 
 require_pkg=""  # what to require if I want to require "the package"
+require=""
 if [ -f "$__object/parameter/install-from-backports" ]; then
 	os=$(cat "$__global/explorer/os")
 	os_version=$(cat "$__global/explorer/os_version")
@@ -32,11 +33,13 @@ if [ -f "$__object/parameter/install-from-backports" ]; then
 		*)
 			echo "--install-from-backports is only supported on Devuan -- ignoring." >&2
 			echo "Send a pull request if you require it." >&2
+			exit 1
 		;;
 	esac
 else
 	__package prometheus
-	require_pkg="__package/prometheus"
+	__package prometheus-blackbox-exporter
+	require_pkg="__package/prometheus __package/prometheus-blackbox-exporter"
 fi
 
 ##### PREPARE PATHS AND SUCH ################################################
@@ -45,7 +48,7 @@ require="$require $require_pkg" __directory "$storage_path" --owner prometheus -
 
 ##### CONFIGURE #############################################################
 
-FLAGS="--storage.tsdb.path $storage_path --storage.tsdb.retention $(($retention_days*24))h --web.listen-address [::]:9090"
+FLAGS="--storage.tsdb.path $storage_path --storage.tsdb.retention $((retention_days*24))h --web.listen-address [::]:9090"
 
 # TODO it would be neat to restart prometheus on change -- __key_value really should have an --onchange parameter
 require="$require $require_pkg" \
@@ -55,16 +58,16 @@ __key_value prometheus_args --file /etc/default/prometheus \
 
 require="$require __directory/$storage_path $require_pkg" \
 __config_file $CONF \
-	--source $config \
+	--source "$config" \
 	--group prometheus --mode 640 \
-	--onchange "promtool check config $CONF && service prometheus reload"
+	--onchange "promtool check config $CONF && service prometheus restart"
 
 for file in $rule_files; do
-	dest=$CONF_DIR/$(basename $file)
+	dest=$CONF_DIR/$(basename "$file")
 	require="$require $require_pkg" \
 	__config_file "$dest" \
 		--source "$file" \
 		--owner prometheus \
-		--onchange "promtool check rules '$dest' && service prometheus reload"
+		--onchange "promtool check rules '$dest' && service prometheus restart"
 done
 

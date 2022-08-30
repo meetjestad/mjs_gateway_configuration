@@ -9,21 +9,19 @@ Source Host
 
 This is the machine from which you will configure target hosts.
 
- * /bin/sh: A posix like shell (for instance bash, dash, zsh)
- * Python >= 3.2
+ * /bin/sh: A POSIX like shell (for instance bash, dash, zsh)
+ * Python >= 3.5
  * SSH client
- * sphinx (for building html docs and/or the man pages)
+ * sphinx with the rtd theme (for building html docs and/or the man pages)
 
 Target Hosts
 ~~~~~~~~~~~~
 
- * /bin/sh: A posix like shell (for instance bash, dash, zsh)
+ * /bin/sh: A POSIX like shell (for instance bash, dash, zsh)
  * SSH server
 
 Install cdist
 -------------
-
-You can install cdist either from git or as a python package.
 
 From git
 ~~~~~~~~
@@ -36,22 +34,43 @@ To install cdist, execute the following commands:
 
 .. code-block:: sh
 
-    git clone https://github.com/ungleich/cdist.git
+    git clone https://code.ungleich.ch/ungleich-public/cdist.git
     cd cdist
     export PATH=$PATH:$(pwd -P)/bin
+
+From version 4.2.0 cdist tags and releases are signed.
+You can get GPG public key used for signing `here <_static/pgp-key-EFD2AE4EC36B6901.asc>`_.
+It is assumed that you are familiar with *git* ways of signing and verification.
+
+You can also get cdist from `github mirror <https://github.com/ungleich/cdist>`_.
 
 To install cdist with distutils from cloned repository, first you have to
 create version.py:
 
 .. code-block:: sh
 
-    make version
+    ./bin/cdist-build-helper version
 
-Then, as usual, you execute the following command:
+Then you install it with:
+
+.. code-block:: sh
+
+   make install
+
+or with:
+
+.. code-block:: sh
+
+   make install-user
+
+to install it into user *site-packages* directory.
+Or directly with distutils:
 
 .. code-block:: sh
 
     python setup.py install
+
+Note that `bin/cdist-build-helper` script is intended for cdist maintainers.
 
 
 Available versions in git
@@ -73,14 +92,6 @@ So for instance if you want to use and stay with version 4.1, you can use
 .. code-block:: sh
 
     git checkout -b 4.1 origin/4.1
-
-Git mirrors
-^^^^^^^^^^^
-
-If the main site is down, you can acquire cdist from one of the following sites:
-
- * git://github.com/telmich/cdist.git `github <https://github.com/telmich/cdist>`_
- * git://git.code.sf.net/p/cdist/code `sourceforge <https://sourceforge.net/p/cdist/code>`_
 
 Building and using documentation (man and html)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -145,3 +156,27 @@ Cdist is available as a python package at
 .. code-block:: sh
 
     pip install cdist
+
+Installing from source with signature verification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to install cdist from signed source and verify it, first you need to
+download cdist archive and its detached signature.
+
+Get both, *cdist-x.y.z.tar.gz* and *cdist-x.y.z.tar.gz.asc* from release
+notes of the desired tag *x.y.z* at
+`cdist git repository <https://code.ungleich.ch/ungleich-public/cdist/-/tags>`_.
+
+Get GPG public key used for signing `here <_static/pgp-key-EFD2AE4EC36B6901.asc>`_
+and import it into GPG.
+
+Now cdist source archive can be verified using `gpg`, e.g. to verify `cdist-6.2.0`:
+
+.. code-block:: sh
+
+    $ gpg --verify cdist-6.2.0.tar.gz.asc cdist-6.2.0.targ.gz
+    gpg: Signature made Sat Nov 30 23:14:19 2019 CET
+    gpg:                using RSA key 69767822F3ECC3C349C1EFFFEFD2AE4EC36B6901
+    gpg: Good signature from "ungleich GmbH (ungleich FOSS) <foss@ungleich.ch>" [ultimate]
+
+Further steps are the same as for `installing from git <cdist-install.html#from-git>`_.
