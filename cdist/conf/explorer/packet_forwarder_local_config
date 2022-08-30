@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# 2021 Matthijs Kooijman <matthijs@stdin.nl>
+#
+# WTFPL
+
+if [ -f "/opt/ttn-gateway/local_conf.json" ]; then
+    cat /opt/ttn-gateway/local_conf.json
+fi
