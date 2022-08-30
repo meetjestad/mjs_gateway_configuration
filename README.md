@@ -120,22 +120,27 @@ beagleboard.org images use. Current versions of the console image do use
 
 SSH login
 ---------
-If you plug in the Lorank to your local network and have mDNS (avahi)
-working, you can connect to "beaglebone.local". Alternatively, you can
-find the Lorank's IP address from your router DHCP table, or power the
-Lorank from your computer, which also gives an USB network connection
-(the Lorank will be reachable at 192.168.7.2 or 192.168.6.2). If you use
-an IP address, adapt the below commands accordingly.
+If you plug in the Lorank to your local network you can connect to
+"beaglebone" (if your router supports DNS resolution for hostnames).
+Alternatively, you can find the Lorank's IP address from your router
+DHCP table, or power the Lorank from your computer, which also gives an
+USB network connection (the Lorank will be reachable at 192.168.7.2 or
+192.168.6.2). If you use an IP address, adapt the below commands
+accordingly.
+
+Note that the older rcn-ee console images came with avahi (mDNS)
+installed, so you could use beagleboard.local, but the official images
+seem to lack this.
 
 You will have to make sure you can login to the Lorank using SSH as
 root. Password logins are disabled for root by default, so make sure to
 allow root logins using your SSH public key. On a clean system, you can
 login with user "debian" and password "temppwd".
 
-    ssh-copy-id -i .ssh/keys/grubby.pub debian@beaglebone.local
-    ssh -t debian@beaglebone.local sudo cp -r .ssh /root/
+    ssh-copy-id -i .ssh/keys/grubby.pub debian@beaglebone
+    ssh -t debian@beaglebone sudo cp -r .ssh /root/
 
-If set up correctly, `ssh root@beaglebone.local` should log in without
+If set up correctly, `ssh root@beaglebone` should log in without
 asking for a password.
 
 Internet connection
@@ -173,11 +178,13 @@ not, the basic system will work, but some parts will not.
 
 To set up the gateway, run:
 
-	CDIST_SET_HOSTNAME=mjs-gateway-123 ./bin/cdist config -v beaglebone.local
+	CDIST_SET_HOSTNAME=mjs-gateway-123 ./bin/cdist config -v beaglebone
 
 After the first run, reboot the gateway to enable the new hostname. You
 let cdist issue a reboot using `./bin/cdist config -v -i
-cdist/conf/manifest/reboot beaglebone.local`).
+cdist/conf/manifest/reboot beaglebone`). After this, mDNS will also be
+working, so you can use e.g. mjs-gateway-123.local to access the
+gateway.
 
 Write to embedded flash
 -----------------------

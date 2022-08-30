@@ -80,6 +80,7 @@ __package_update_index --maxage 3600
 # Useful packages
 ############################################
 __package_apt vim --state present
+__package_apt avahi-daemon --state present
 
 ############################################
 # Disable unneeded stuff
