@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+7.0.1:
+	* Type __apt_mark: Narrow down grep for hold packages (marcoduif)
+
 7.0.0: 2022-07-31
 	* Explorer machine_type: Rewrite (Dennis Camera)
 	* New type: __sed (Ander Punnar)
