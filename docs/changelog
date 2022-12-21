@@ -3,6 +3,7 @@ Changelog
 
 7.0.1:
 	* Type __apt_mark: Narrow down grep for hold packages (marcoduif)
+	* Type __apt_source: Set required options variable (Mark Verboom)
 
 7.0.0: 2022-07-31
 	* Explorer machine_type: Rewrite (Dennis Camera)
