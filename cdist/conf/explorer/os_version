@@ -82,6 +82,7 @@ in
             # ceres versions don't have a number, so we decode by codename:
             case ${devuan_version}
             in
+               (daedalus/ceres) echo 4.99 ;;
                (chimaera/ceres) echo 3.99 ;;
                (beowulf/ceres) echo 2.99 ;;
                (ascii/ceres) echo 1.99 ;;
