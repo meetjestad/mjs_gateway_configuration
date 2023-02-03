@@ -85,7 +85,7 @@ if [ -z "${certbot_fullpath}" ]; then
 			esac
 		;;
 		freebsd)
-			__package py37-certbot
+			__package py39-certbot
 			certbot_fullpath="/usr/local/bin/certbot"
 		;;
 		ubuntu)
