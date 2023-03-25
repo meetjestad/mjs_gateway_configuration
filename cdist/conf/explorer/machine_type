@@ -515,7 +515,7 @@ check_vm_arch_specific() {
 				&& return 0
 			fi
 			if has_cpuinfo \
-				&& grep -q -i -e '^flags.*:.*\(hypervisor\|vmm\)\( \|$\) /proc/cpuinfo
+				&& grep -q -i -e '^flags.*:.*\(hypervisor\|vmm\)\( \|$\)' /proc/cpuinfo
 			then
 				return 0
 			fi
