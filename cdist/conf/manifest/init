@@ -256,6 +256,11 @@ __line enable_si7020 \
   --line 'uboot_overlay_addr4=/lib/firmware/SI7020.dtbo'
 
 ############################################
+# 3G modem package
+############################################
+__package_apt usb-modeswitch
+
+############################################
 # 3G keepalive hack
 ############################################
 __systemd_unit 3g-keepalive-hack.service \
