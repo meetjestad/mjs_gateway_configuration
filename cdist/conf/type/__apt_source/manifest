@@ -21,6 +21,7 @@
 name="$__object_id"
 state="$(cat "$__object/parameter/state")"
 uri="$(cat "$__object/parameter/uri")"
+options=""
 
 if [ -f "$__object/parameter/distribution" ]; then
    distribution="$(cat "$__object/parameter/distribution")"

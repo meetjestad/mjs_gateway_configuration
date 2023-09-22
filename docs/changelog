@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+7.0.1:
+	* Core: Remove double definition of scan parser (Nico Schottelius)
+	* Type __apt_mark: Narrow down grep for hold packages (marcoduif)
+	* Type __apt_source: Set required options variable (Mark Verboom)
+	* Type __letsencrypt_cert: Update python version (Michelle)
+	* Explorer os_version: Add support for Daedalus (Michelle)
+	* Explorer machine_type: Correct incorrect VMM matching (Mark Verboom)
+
 7.0.0: 2022-07-31
 	* Explorer machine_type: Rewrite (Dennis Camera)
 	* New type: __sed (Ander Punnar)
