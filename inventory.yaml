@@ -1,0 +1,7 @@
+gateways:
+  hosts:
+    # For testing
+    rockpi-s:
+      ansible_host: rockpi-s
+      ansible_user: root
+      board: rockpi-s

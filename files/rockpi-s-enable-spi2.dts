@@ -1,0 +1,38 @@
+/dts-v1/;
+/plugin/;
+
+// From include/dt-bindings/pinctrl/rockchip.h
+// #define RK_PA7          7
+
+// From include/dt-bindings/gpio/gpio.h
+// #define GPIO_ACTIVE_HIGH 0
+// #define GPIO_ACTIVE_LOW 1
+
+// This refers to the uart1 module defined in the main devicetree, see
+// e.g. /proc/device-tree/__symbols__/uart1
+&spi2 {
+    status = "okay";
+
+    // Default pinctrl config includes cs0 in SPI mode, which is ok, so
+    // no need to configure pinctrl
+
+    // Connect extra gpio CS pin
+    cs-gpios = <0 /* native cs0 */>, <&gpio2 7 /* RK_PA7 */ 1 /* GPIO_ACTIVE_LOW */>;
+
+    // Create /dev/spidevx.y devices
+    spidev@0 {
+            compatible = "rohm,dh2228fv";
+            reg = <0>;
+            spi-max-frequency = <10000000>;
+    };
+    spidev@1 {
+            compatible = "rohm,dh2228fv";
+            reg = <1>;
+            spi-max-frequency = <10000000>;
+    };
+};
+
+&uart2 {
+        // Disable to free up spi2 MISO and MOSI pins
+        status = "disabled";
+};

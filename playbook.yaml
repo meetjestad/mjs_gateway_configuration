@@ -1,0 +1,121 @@
+- name: System setup
+  hosts: all
+  tags: system
+  gather_facts: False # Not using facts
+  vars:
+    user: 'pi'
+  tasks:
+    # Accept some user preferences through SSH
+    - name: Configure SSH AcceptEnv
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^AcceptEnv.*$"
+        line: "AcceptEnv LANG LC_* GIT_* EDITOR"
+        insertafter: "EOF"
+        state: present
+      notify:
+        - Restart sshd
+    # Allow using git through sudo
+    - name: Configure sudo env_keep
+      ansible.builtin.copy:
+        dest: '/etc/sudoers.d/env_keep'
+        src: './files/sudoers_env_keep'
+    - name: Update apt cache if old
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+    - name: Install useful packages
+      ansible.builtin.apt:
+        pkg:
+        - vim
+        - tig
+        - git
+        - avahi-daemon
+    - name: Configure user authorized keys
+      ansible.builtin.copy:
+        dest: '/home/{{ user }}/.ssh/'
+        src: './files/authorized_keys'
+    - name: Configure root authorized keys
+      ansible.builtin.copy:
+        dest: '/root/.ssh/'
+        src: './files/authorized_keys'
+    - name: Allow passwordless sudo
+      community.general.sudoers:
+        name: passwordless
+        state: present
+        user: "{{ user }}"
+        commands: ALL
+        nopassword: true
+    - name: Disable user password
+      ansible.builtin.user:
+        name: "{{ user }}"
+        password_lock: true
+    - name: Disable root password
+      ansible.builtin.user:
+        name: "{{ user }}"
+        password_lock: true
+    - name: Set the hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+    - name: Replace localhost entry ipv4
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.0\.1\s'
+        line: "127.0.0.1   {{ inventory_hostname }}"
+    - name: Replace localhost entry ipv6
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^::1 '
+        line: "::1         {{ inventory_hostname }}"
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+
+
+- name: Set up gateway
+  hosts: gateways
+  tags: gateway
+  gather_facts: False # Not using facts
+  vars:
+    clone_dir: /opt/basicstation
+  tasks:
+    - name: Copy SPI devicetree
+      when: board == "rockpi-s"
+      ansible.builtin.copy:
+        dest: '/root/'
+        src: './files/rockpi-s-enable-spi2.dts'
+      register: copy_spi_dt
+
+    - name: Install UART devicetree
+      when: (board == "rockpi-s") and copy_spi_dt.changed
+      command: armbian-add-overlay /root/rockpi-s-enable-spi2.dts
+
+    - name: Setup GPIO permissions
+      when: board == "rockpi-s"
+      ansible.builtin.copy:
+        dest: /etc/udev/rules.d/99-gpio-permissions.rules
+        content: SUBSYSTEM=="gpio", ACTION=="add", GROUP="plugdev", MODE="0660"
+
+    - name: Install apt dependencies
+      ansible.builtin.apt:
+        pkg:
+        - build-essential
+        - git
+
+    - name: Checkout basicstation
+      ansible.builtin.git:
+        repo: https://github.com/lorabasics/basicstation
+        dest: '{{ clone_dir }}'
+      register: checkout_basicstation
+
+    - name: Compile basicstation
+      ansible.builtin.command:
+        # This adds explicit ARCH to force a native build, because the
+        # default for "platform=corecell" is armhf and rockpi-s is
+        # aarch64.
+        cmd: make platform=corecell variant=std ARCH="$(gcc -dumpmachine)"
+        chdir: '{{ clone_dir }}'
+      when: checkout_basicstation.changed
