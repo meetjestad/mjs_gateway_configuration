@@ -1,5 +1,9 @@
-from pyinfra.operations import apt, files, git, server
+import os
 import shlex
+import subprocess
+
+from pyinfra import facts, host
+from pyinfra.operations import apt, files, git, python, server
 
 checkout_dir = "/usr/local/src/basicstation"
 
@@ -19,6 +23,7 @@ git.repo(
 # really not different from platform=linux except for the default ARCH.
 # Since we're overriding that anyway, just use linux for the SX1301
 # builds
+output_files = []
 for (platform, buildname) in (("corecell", "sx1302"), ("linux", "sx1301")):
     for (compiler, arch) in (("riscv64-linux-gnu", "riscv64"), ("arm-linux-gnueabihf", "armhf")):
         build_dir = f"build-{buildname}-{arch}"
@@ -44,9 +49,37 @@ for (platform, buildname) in (("corecell", "sx1302"), ("linux", "sx1301")):
             ])]
         )
 
+        output_file = f"files/basicstation/{arch}-{buildname}/station"
         files.get(
             name=f"Extract basicstation binaries for {buildname} on {arch}",
             src=f"{checkout_dir}/{build_dir}/bin/station",
-            dest=f"files/basicstation/{arch}-{buildname}/station",
+            dest=output_file,
             create_local_dir=True,
         )
+        output_files.append(output_file)
+
+
+def commit_result():
+    parent = os.path.dirname(checkout_dir)
+    base = os.path.basename(checkout_dir)
+    cmd = (
+        f"cd '{parent}';" +
+        f"find '{base}' -name .git -printf '  %h: ' -exec git --git-dir {{}} describe --tags --always --long \\;"
+    )
+    versions = host.get_fact(facts.server.Command, cmd)
+    message = "\n".join((
+        "basicstation: Update binaries",
+        "",
+        f"This is the result of rebuilding the binaries using the {os.path.basename(__file__)}",
+        "script. This uses the following source code versions:",
+        "",
+        versions,
+    ))
+
+    subprocess.run(['git', 'commit', '--message', message, *output_files], check=True)
+
+
+python.call(
+    name="Commit result",
+    function=commit_result,
+)
