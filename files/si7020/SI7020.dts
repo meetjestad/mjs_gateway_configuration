@@ -1,0 +1,36 @@
+/*
+This is a device-tree overlay for the Beaglebone (green) that tells the
+kernel about the presence of a SI7013/20/21 sensor on the i2c2 bus.
+
+See also:
+  https://www.kernel.org/doc/Documentation/i2c/instantiating-devices
+  https://github.com/torvalds/linux/blob/master/drivers/iio/humidity/si7020.c
+
+To compile, run:
+
+	dtc -O dtb -o SI7020.dtbo -b 0 -@ SI7020.dts
+
+This needs dtc 1.4.3 for the -@ option, which is needed to compile
+overlays. Until dtc learns about overlays properly, it will give this
+warning you can ignore:
+
+	SI7020.dtbo: Warning (unit_address_vs_reg): Node /fragment@0 has a unit name, but no reg property
+*/
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&i2c2>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+                        htu21@40 {
+                          compatible = "silabs,si7020";
+                          reg = <0x40>;
+                        };
+		};
+	};
+};

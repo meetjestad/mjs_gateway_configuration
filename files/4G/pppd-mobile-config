@@ -1,0 +1,20 @@
+{{ modem_dev }}
+460800
+crtscts
+modem
+noauth
+usepeerdns
+defaultroute replacedefaultroute
+noipdefault
+noccp
+nobsdcomp
+novj
+
+# Reconnect when connection breaks, with a bit of holdoff delay between attempts
+persist
+holdoff 5
+
+# But quit (and let systemd restart us) when it repeatedly fails
+maxfail 3
+
+connect '/usr/sbin/chat -v -f /etc/ppp/peers/pppd-mobile-chat'

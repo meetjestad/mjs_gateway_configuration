@@ -1,0 +1,25 @@
+# Inspired by https://gist.github.com/drmalex07/c0f9304deea566842490
+# and https://blog.kylemanna.com/linux/ssh-reverse-tunnel-on-linux-with-systemd/
+
+[Unit]
+Description=Remote SSH access through Nuttssh
+After=network.target
+
+[Service]
+User=nuttssh
+ExecStartPre=/bin/sh -c "[ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''"
+# - Let SSH send keepalives every 60s and exit if 2 of them are not responded to
+# - Exit when port forwarding fails, since that is the entire point of the connection
+# - Disable strict host checking, so the connection does not break when
+#   the DNS is moved to a different server
+ExecStart=/usr/bin/ssh %H@nuttssh.meetjestad.net -p 2222 -R 22:localhost:22 -NT -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no
+
+# Wait for some time between restarts
+RestartSec=60
+Restart=always
+# Disable burst restart limits, since we have a big RestartSec already
+# (StartLimit might cause Systemd to give up restarting the service...)
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target

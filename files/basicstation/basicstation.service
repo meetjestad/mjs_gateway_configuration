@@ -1,0 +1,14 @@
+[Unit]
+Description=LoRa Basic Station Service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+TimeoutStartSec=infinity
+Type=simple
+TimeoutSec=infinity
+RestartSec=10
+WorkingDirectory=/opt/basicstation
+ExecStart=/opt/basicstation/station -h config
+Restart=always
