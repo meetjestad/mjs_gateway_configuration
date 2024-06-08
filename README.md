@@ -254,3 +254,12 @@ it, so make sure to not boot from it again (or edit `/boot/uEnv.txt` on
 the SD card to disable the flashing again).
 
 [write_emmc]: https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#Flashing_eMMC
+
+Network ports used
+------------------
+The gateways installed by these scripts make use of these outgoing
+ports:
+ - TCP 8887 to connect to TTN
+ - TCP 2222 for remote access (SSH)
+
+No incoming ports are required.
