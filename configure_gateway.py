@@ -29,7 +29,7 @@ def do_configure():
     result = subprocess.run(
         (
             "ttn-lw-cli", "gateways", "get", host.name,
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
     if result.returncode != 0:
         print(result.stderr)
@@ -145,7 +145,7 @@ def do_configure():
         else:
             info(f"Password for user '{username}' is disabled, seeing if we have a password to set")
 
-        result = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE)
+        result = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE, text=True)
         password = result.stdout
 
         if result.returncode or not password:
@@ -328,7 +328,7 @@ def do_configure():
                             "ttn-lw-cli", "gateways", "api-keys", "create", gw_id,
                             "--name", f"Gateway key by pyinfra ({today})",
                             "--right-gateway-link"
-                        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+                        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
                     ).stdout
 
                     gw_key = json.loads(key_json)["key"]
@@ -359,10 +359,10 @@ def do_configure():
             try:
                 subprocess.run(
                     ("ttn-lw-cli", "gateways", "set", gw_id, "--gateway-eui", gw_eui),
-                    check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                 )
             except subprocess.CalledProcessError as e:
-                print(e.output.decode())
+                print(e.output)
                 print(f"Failed to set gateway EUI: {e}")
         python.call(
             name="Update EUI in TTN",
