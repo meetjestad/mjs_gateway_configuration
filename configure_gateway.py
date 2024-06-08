@@ -1,3 +1,4 @@
+import crypt
 import datetime
 import io
 import json
@@ -19,6 +20,7 @@ def do_configure():
         basicstation_build = "armhf-sx1301"
         basicstation_config = "lorank.conf"
         username = 'debian'
+        default_password = 'temppwd'
     else:
         info("Unknown board model, aborting: {model}")
         return
@@ -114,15 +116,35 @@ def do_configure():
     # sets a (very long) password since that can be transferred to
     # someone else for recovering a gateway in case nobody with SSH key
     # access is available.
-    password = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE).stdout
-    if not password:
-        print("Password not available in pass password manager, leaving password unchanged")
+    users = host.get_fact(facts.server.Users)
+    pw_hash = users.get(username, {}).get('password')
+    pw_is_default = (crypt.crypt(default_password, pw_hash) == pw_hash)
+    pw_is_disabled = (pw_hash == '!')
+
+    if pw_is_default or pw_is_disabled:
+        if pw_is_default:
+            info(f"Password for user '{username}' is still at default, seeing if we have a password to set")
+        else:
+            info(f"Password for user '{username}' is disabled, seeing if we have a password to set")
+
+        result = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE)
+        password = result.stdout
+
+        if result.returncode or not password:
+            info("Password not available in pass password manager, disabling password instead to be changed later")
+            server.user(
+                name="Disable user password",
+                user=username,
+                password="!",
+            )
+        else:
+            server.user(
+                name="Set user password",
+                user=username,
+                password=password,
+            )
     else:
-        server.user(
-            name="Set user password",
-            user=username,
-            password=password,
-        )
+        info(f"Password for user '{username}' is not default and not disabled, leaving unchanged")
 
     ############################################
     # Sudo
