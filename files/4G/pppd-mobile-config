@@ -10,6 +10,10 @@ noccp
 nobsdcomp
 novj
 
+# Emperically determined value for SIM7600G-H and alwaysconnected.eu.
+# Anything bigger prevents SSH from working.
+mtu 1450
+
 # Reconnect when connection breaks, with a bit of holdoff delay between attempts
 persist
 holdoff 5
