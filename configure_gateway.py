@@ -18,6 +18,7 @@ def do_configure():
         device = "lorank"
         basicstation_build = "armhf-sx1301"
         basicstation_config = "lorank.conf"
+        username = 'debian'
     else:
         info("Unknown board model, aborting: {model}")
         return
@@ -89,7 +90,7 @@ def do_configure():
     else:
         authorized_keys = "amersfoort"
 
-    for user in ('root', 'debian'):
+    for user in ('root', username):
         server.user_authorized_keys(
             name=f"Setup SSH authorized keys for {user}",
             user=user,
@@ -118,8 +119,8 @@ def do_configure():
         print("Password not available in pass password manager, leaving password unchanged")
     else:
         server.user(
-            name="Set debian user password",
-            user='debian',
+            name="Set user password",
+            user=username,
             password=password,
         )
 
