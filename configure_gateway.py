@@ -146,7 +146,7 @@ def do_configure():
             info(f"Password for user '{username}' is disabled, seeing if we have a password to set")
 
         result = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE, text=True)
-        password = result.stdout
+        password = result.stdout.strip()
 
         if result.returncode or not password:
             info("Password not available in pass password manager, disabling password instead to be changed later")
@@ -159,7 +159,7 @@ def do_configure():
             server.user(
                 name="Set user password",
                 user=username,
-                password=password,
+                password=crypt.crypt(password),
             )
     else:
         info(f"Password for user '{username}' is not default and not disabled, leaving unchanged")
