@@ -10,5 +10,11 @@ Type=simple
 TimeoutSec=infinity
 RestartSec=10
 WorkingDirectory=/opt/basicstation
+# Remove any leftover pidfile, since basicstation does not do proper
+# checking on the pidfile (so it might end up not starting because some
+# other process is using its old pidfile) and it is not cleaned on
+# reboot by default (due to using /var/tmp). No need for a pidfile
+# anyway, so just trash it before start.
+ExecStartPre=/usr/bin/rm -f /var/tmp/station.pid
 ExecStart=/opt/basicstation/station -h config
 Restart=always
