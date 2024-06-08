@@ -196,19 +196,9 @@ def do_configure():
     # TODO: This generates an ssh key as part of the service startup. It
     # would be nicer if pyinfra did this, and printed the public key for
     # configuring the Nuttssh server.
-    files.put(
-        name="Install nuttssh service",
+    install_and_start_service(
+        service="nuttssh",
         src='files/nuttssh/nuttssh.service',
-        dest='/etc/systemd/system/nuttssh.service',
-    )
-
-    # TODO: Would be nice if systemd.service could also install service
-    # files, like cdist has, and do a daemon-reload.
-    systemd.service(
-        name="Enable nuttssh",
-        service='nuttssh.service',
-        enabled=True,
-        running=True,
     )
 
     ############################################
@@ -268,17 +258,9 @@ def do_configure():
             apn=apn,
         )
 
-        files.put(
-            name="Install pppd mobile service",
+        install_and_start_service(
+            service="pppd-mobile",
             src='files/4G/pppd-mobile.service',
-            dest='/etc/systemd/system/pppd-mobile.service',
-        )
-
-        systemd.service(
-            name="Enable pppd-mobile service",
-            service='pppd-mobile.service',
-            enabled=True,
-            running=True,
         )
 
         networkd_ppp0 = files.put(
@@ -423,19 +405,11 @@ def do_configure():
             path='/opt/basicstation/config/tc.trust',
             target='/etc/ssl/certs/ca-certificates.crt'
         ),
-
-        files.put(
-            name="Install basicstation service",
-            src='files/basicstation/basicstation.service',
-            dest='/etc/systemd/system/basicstation.service',
-        ),
     ]
 
-    systemd.service(
-        name="Enable and (re)start basicstation service",
-        service='basicstation.service',
-        enabled=True,
-        running=True,
+    install_and_start_service(
+        service="basicstation",
+        src='files/basicstation/basicstation.service',
         restarted=any(op.will_change for op in update_basicstation_ops),
     )
 
@@ -482,6 +456,43 @@ def info(msg):
 class GatewayEui(api.FactBase):
     """ Returns the gateway EUI based on the MAC address (as done by basicstation as well) """
     command = "cat /sys/class/net/eth0/address | awk -F: '{print $1$2$3 \"fffe\" $4$5$6}'"
+
+
+# TODO: This could be an operation itself, but I could not quickly
+# figure out how to call other from it then (and also check their
+# will_change in between). Now this is just a helper function that
+# produces multiple operations, which might not actually be bad.
+def install_and_start_service(service, src, restarted=False):
+    # The default is True, which causes a start attempt on a service
+    # that is not fully running (i.e. continuously restarting due to
+    # missing internet uplink). Setting this to None circumvents that
+    # (False would try and stop the service if it was running properly).
+    running = None
+
+    install_service = files.put(
+        name=f"Install {service} service",
+        src=src,
+        dest=f'/etc/systemd/system/{service}.service',
+    )
+
+    if install_service.will_change:
+        # Not needed for new service files, but needed for changed ones
+        systemd.daemon_reload(
+            name="Reload systemd",
+        )
+
+        # This ensures that the service is either restarted (when
+        # already running) or started (when not running)
+        restarted = True
+        running = True
+
+    systemd.service(
+        name=f"Enable and (re)start {service} service",
+        service=service,
+        enabled=True,
+        restarted=restarted,
+        running=running,
+    )
 
 
 do_configure()
