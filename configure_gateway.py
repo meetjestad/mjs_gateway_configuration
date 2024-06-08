@@ -320,30 +320,36 @@ def do_configure():
         key_file = '/opt/basicstation/config/tc.key'
         key_file_info = host.get_fact(facts.files.File, key_file)
         if key_file_info is None:
-            today = datetime.date.today().isoformat()
-            try:
-                key_json = subprocess.run(
-                    (
-                        "ttn-lw-cli", "gateways", "api-keys", "create", gw_id,
-                        "--name", f"Gateway key by pyinfra ({today})",
-                        "--right-gateway-link"
-                    ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
-                ).stdout
+            def generate_api_key():
+                today = datetime.date.today().isoformat()
+                try:
+                    key_json = subprocess.run(
+                        (
+                            "ttn-lw-cli", "gateways", "api-keys", "create", gw_id,
+                            "--name", f"Gateway key by pyinfra ({today})",
+                            "--right-gateway-link"
+                        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+                    ).stdout
 
-                gw_key = json.loads(key_json)["key"]
-                info(f"Generated TTN gateway key: {gw_key}")
+                    gw_key = json.loads(key_json)["key"]
+                    info(f"Generated TTN gateway key: {gw_key}")
 
-                files.put(
-                    name="Set gateway authentication key",
-                    src=io.StringIO(f"Authorization: Bearer {gw_key}\n"),
-                    dest=key_file,
-                )
-            except subprocess.CalledProcessError as e:
-                print(e.stderr.decode())
-                print(e.stdout.decode())
-                info(f"Failed to add API key: {e}")
-            except Exception as e:
-                info(f"Failed to add API key: {e}")
+                    files.put(
+                        name="Set gateway authentication key",
+                        src=io.StringIO(f"Authorization: Bearer {gw_key}\n"),
+                        dest=key_file,
+                    )
+                except subprocess.CalledProcessError as e:
+                    print(e.stderr.decode())
+                    print(e.stdout.decode())
+                    info(f"Failed to add API key: {e}")
+                except Exception as e:
+                    info(f"Failed to add API key: {e}")
+
+            python.call(
+                name="Generate API key in TTN and configure it on gateway",
+                function=generate_api_key,
+            )
 
     ############################################
     # Configure EUI in TTN
