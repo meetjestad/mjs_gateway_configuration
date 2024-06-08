@@ -58,6 +58,24 @@ def do_configure():
             gw_eui = None
 
     ############################################
+    # Apt update
+    ############################################
+    will_install_apt_packages = False
+    apt.update(
+        name="Update apt lists",
+        cache_time=3600,
+        # Only update apt cache if we are about to install packages (and
+        # only if it is not recently done). Ideally, apt.packages would
+        # handle this automatically, but until then, use an if and
+        # global variable to look into the future to see if an apt
+        # update is needed.
+        # Downside of this approach is that the change is always shown
+        # as "conditional change" in the change list.
+        # See: https://github.com/pyinfra-dev/pyinfra/issues/1102
+        _if=lambda: will_install_apt_packages,
+    )
+
+    ############################################
     # Remove unneeded pacakges
     ############################################
     apt.packages(
@@ -196,25 +214,21 @@ def do_configure():
     ############################################
     # Useful packages
     ############################################
-    apt.packages(
+    install_useful = apt.packages(
         name="Install packages",
         packages=('vim', 'avahi-daemon'),
-        # Run apt update, but only if cache is this old
-        # TODO: This seems to update if the cache is old, even when there
-        # are no packages to install?
-        # https://github.com/pyinfra-dev/pyinfra/issues/1102
-        update=True,
-        cache_time=3600,
     )
+    if install_useful.will_change:
+        will_install_apt_packages = True
     ############################################
     # Firewall
     ############################################
-    apt.packages(
+    install_firewall = apt.packages(
         name="Install nftables firewall package",
         packages=('nftables',),
-        update=True,
-        cache_time=3600,
     )
+    if install_firewall.will_change:
+        will_install_apt_packages = True
 
     files.put(
         name="Install nftables firewall configuration",
@@ -233,10 +247,12 @@ def do_configure():
     # GSM modem setup
     ############################################
     if modem_dev and apn:
-        apt.packages(
+        install_pppd = apt.packages(
             name="Install pppd",
             packages=('ppp'),
         )
+        if install_pppd.will_change:
+            will_install_apt_packages = True
 
         files.template(
             name="Install pppd mobileconfig",
