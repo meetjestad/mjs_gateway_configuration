@@ -84,7 +84,7 @@ def do_configure():
         # bbb minimal images, so remove them to save memory and reduce
         # attack surface
         name="Remove unneeded packages",
-        packages=('nginx', "mender-client"),
+        packages=('nginx', "nginx-common", "mender-client"),
         present=False,
     )
 
