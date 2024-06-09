@@ -2,6 +2,7 @@ import crypt
 import datetime
 import io
 import json
+import os
 import subprocess
 
 from pyinfra import api, facts, host
@@ -449,6 +450,23 @@ def do_configure():
             path='/boot/uEnv.txt',
             line='uboot_overlay_addr4=/lib/firmware/SI7020.dtbo',
         )
+
+    ############################################
+    # Write config stamp
+    ############################################
+    version = subprocess.run(
+        (
+            'git', '--git-dir', os.path.join(os.path.dirname(__file__), '.git'),
+            'describe', '--tags', '--always', '--long', '--dirty',
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
+    ).stdout
+    files.put(
+        name="Write config stamp",
+        src=io.StringIO(
+            f"Last configured using {os.path.basename(__file__)}, version {version}\n"
+        ),
+        dest="/root/pyinfra.stamp",
+    )
 
 
 def yesnoprompt(prompt):
