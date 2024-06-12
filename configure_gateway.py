@@ -34,7 +34,7 @@ def do_configure():
     )
     if result.returncode != 0:
         print(result.stderr)
-        prompt = "Failed to retrieve gateway details from TTN. Continue without configuring gateway in TTN? [Y/n]"
+        prompt = "Failed to retrieve gateway details from TTN. Continue without configuring gateway in TTN? [y/N]"
         if not yesnoprompt(prompt):
             info("Ok, aborting as requested")
             return
@@ -51,7 +51,7 @@ def do_configure():
         elif ttn_eui != gw_eui:
             info(f"EUI set in TTN: {ttn_eui}")
             info(f"EUI generated from MAC address: {gw_eui}")
-            if not yesnoprompt("EUI mismatch, update it in TTN? [Y/n]"):
+            if not yesnoprompt("EUI mismatch, update it in TTN? [y/N]"):
                 info("Ok, not fixing EUI mismatch")
                 gw_eui = None
         else:
@@ -470,7 +470,7 @@ def do_configure():
 
 
 def yesnoprompt(prompt):
-    return input(f"{host.name}: {prompt}") in ("", "y", "Y", "yes")
+    return input(f"{host.name}: {prompt}") in ("y", "Y", "yes")
 
 
 def info(msg):
