@@ -1,3 +1,8 @@
+> [!NOTE]  
+> This branch contains the older gateway configuration scripts based on
+> cdist. These have been replaced by pyinfra-based scripts in 2024 in
+> the main branch. This branch just exists for historical reasons.
+
 Meetjestad Lorank gateway configuration using cdist
 ---------------------------------------------------
 This repository contains documentation and scripts used to configure the
