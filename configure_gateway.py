@@ -252,14 +252,14 @@ def do_configure():
         if install_pppd.will_change:
             will_install_apt_packages = True
 
-        files.template(
+        install_pppd_config = files.template(
             name="Install pppd mobileconfig",
             src="files/4G/pppd-mobile-config",
             dest="/etc/ppp/peers/pppd-mobile-config",
             modem_dev=modem_dev,
         )
 
-        files.template(
+        install_pppd_chat = files.template(
             name="Install pppd mobile chat file",
             src="files/4G/pppd-mobile-chat",
             dest="/etc/ppp/peers/pppd-mobile-chat",
@@ -269,6 +269,7 @@ def do_configure():
         install_and_start_service(
             service="pppd-mobile",
             src='files/4G/pppd-mobile.service',
+            restarted=any((install_pppd.will_change, install_pppd_config.will_change, install_pppd_chat.will_change)),
         )
 
         networkd_ppp0 = files.put(
