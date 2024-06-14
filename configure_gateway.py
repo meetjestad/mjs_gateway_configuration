@@ -123,7 +123,7 @@ def do_configure():
             name=f"Setup SSH authorized keys for {user}",
             user=user,
             public_keys=[f"files/authorized_keys/{authorized_keys}"],
-            delete_keys=False,
+            delete_keys=True,
         )
 
     ############################################
