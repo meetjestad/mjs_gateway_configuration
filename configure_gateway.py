@@ -467,10 +467,11 @@ def do_configure():
             'describe', '--tags', '--always', '--long', '--dirty',
         ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
     ).stdout
+    date = datetime.date.today().isoformat()
     files.put(
         name="Write config stamp",
         src=io.StringIO(
-            f"Last configured using {os.path.basename(__file__)}, version {version}\n"
+            f"Last configured on {date} using {os.path.basename(__file__)}, version {version}\n"
         ),
         dest="/root/pyinfra.stamp",
     )
