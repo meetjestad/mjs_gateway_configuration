@@ -22,6 +22,7 @@ def do_configure():
         basicstation_config = "lorank.conf"
         username = 'debian'
         default_password = 'temppwd'
+        default_hostname = 'beaglebone'
     else:
         info("Unknown board model, aborting: {model}")
         return
@@ -57,6 +58,12 @@ def do_configure():
         else:
             info("EUI matches one configured in TTN")
             gw_eui = None
+
+    hostname = host.get_fact(facts.server.Hostname)
+    if hostname != host.name and hostname != default_hostname:
+        if not yesnoprompt(f"Current hostname is {hostname}, change to {host.name}? [y/N]"):
+            info("Aborting, mismatching hostname will cause trouble")
+            return
 
     ############################################
     # Apt update
