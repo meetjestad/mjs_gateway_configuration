@@ -218,6 +218,40 @@ def do_configure():
     )
     if install_useful.will_change:
         will_install_apt_packages = True
+
+    ############################################
+    # Unattended upgrades
+    ############################################
+    install_unattended_upgrades = apt.packages(
+        name="Install unattended_upgrades",
+        packages=('unattended-upgrades',),
+    )
+    if install_unattended_upgrades.will_change:
+        will_install_apt_packages = True
+
+    files.put(
+        # Unattended upgrades is enabled in apt.conf by default (if the
+        # appropriate timers are enabled), but configure it to send
+        # e-mail reports of upgrades to keep an eye on the changes.
+        name="Configure unattended upgrades",
+        src=io.StringIO(
+            'Unattended-Upgrade::Mail "root";'
+        ),
+        dest="/etc/apt/apt.conf.d/50unattended-upgrades-local",
+    )
+
+    systemd.service(
+        name="Enable apt-daily timer",
+        service='apt-daily.timer',
+        enabled=True,
+    )
+
+    systemd.service(
+        name="Enable apt-daily-upgrade timer",
+        service='apt-daily-upgrade.timer',
+        enabled=True,
+    )
+
     ############################################
     # Firewall
     ############################################
