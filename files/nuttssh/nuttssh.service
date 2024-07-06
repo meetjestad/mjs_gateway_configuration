@@ -10,9 +10,8 @@ User=nuttssh
 ExecStartPre=/bin/sh -c "[ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''"
 # - Let SSH send keepalives every 60s and exit if 2 of them are not responded to
 # - Exit when port forwarding fails, since that is the entire point of the connection
-# - Disable strict host checking, so the connection does not break when
-#   the DNS is moved to a different server
-ExecStart=/usr/bin/ssh %H@nuttssh.meetjestad.net -p 1878 -R 22:localhost:22 -NT -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no
+# - Auto-accept new host-keys to simplify initial deployment
+ExecStart=/usr/bin/ssh %H@nuttssh.meetjestad.net -p 1878 -R 22:localhost:22 -NT -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new
 
 # Wait for some time between restarts
 RestartSec=60
