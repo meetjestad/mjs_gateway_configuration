@@ -220,6 +220,39 @@ def do_configure():
         will_install_apt_packages = True
 
     ############################################
+    # Mail delivery
+    ############################################
+    # Use nullmailer to setup mail delivery for e.g. unattended
+    # upgrades). This does not set up authentication, so this only works
+    # for non-relayed mail (that is handled by the server we forward to).
+    install_nullmailer = apt.packages(
+        name="Install nullmailer",
+        packages=('nullmailer',),
+    )
+    if install_nullmailer.will_change:
+        will_install_apt_packages = True
+
+    files.put(
+        # All mail will use this envelope sender
+        name="Set nullmailer allmailfrom",
+        src=io.StringIO("gateways@meetjestad.net\n"),
+        dest='/etc/nullmailer/allmailfrom',
+    )
+    files.put(
+        # All mail to localhost / local accounts will be forwarded to
+        # this address
+        name="Set nullmailer adminaddr",
+        src=io.StringIO("gateways@meetjestad.net\n"),
+        dest='/etc/nullmailer/adminaddr',
+    )
+    files.put(
+        # All mail will be forwarded to this host
+        name="Set nullmailer remote",
+        src=io.StringIO("mail.meetjestad.net\n"),
+        dest='/etc/nullmailer/remotes',
+    )
+
+    ############################################
     # Unattended upgrades
     ############################################
     install_unattended_upgrades = apt.packages(
