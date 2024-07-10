@@ -527,6 +527,16 @@ def do_configure():
         )
 
     ############################################
+    # Solar logger
+    ############################################
+    files.line(
+        # Enable this unconditionally, just in case it is needed
+        name="Enable UART4 overlay for solar datalogger",
+        path='/boot/uEnv.txt',
+        line='uboot_overlay_addr5=BB-UART4-00A0.dtbo',
+    )
+
+    ############################################
     # Vector data collection agent
     ############################################
     install_vector = apt.deb(
