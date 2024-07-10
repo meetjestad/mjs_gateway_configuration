@@ -1,0 +1,8 @@
+sinks:
+  influx:
+    type: influxdb_metrics
+    inputs: ["*_final_output"]
+    bucket: gateways
+    endpoint: https://influx.meetjestad.net/
+    org: meet-je-stad
+    # Token is configured in separate file

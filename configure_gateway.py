@@ -527,6 +527,60 @@ def do_configure():
         )
 
     ############################################
+    # Vector data collection agent
+    ############################################
+    install_vector = apt.deb(
+        name="Install vector package",
+        src="https://apt.vector.dev/pool/v/ve/vector_0.39.0-1_armhf.deb",
+    )
+
+    install_vector_config = files.sync(
+        name="Install vector config",
+        src="files/vector/config.d",
+        dest="/etc/vector/config.d",
+        exclude="*/sink-influx-token.yaml",
+        delete=True,
+    )
+
+    vector_influx_config = '/etc/vector/config.d/sink-influx-token.yaml'
+    vector_influx_config_info = host.get_fact(facts.files.File, vector_influx_config)
+    enable_vector = True
+    if vector_influx_config_info is None:
+        info("No influx token config for vector, seeing if we have a token available")
+        result = subprocess.run(
+            ('pass', 'show', 'other/influx/influx.meetjestad.net/mjs-gateway-x'),
+            stdout=subprocess.PIPE, text=True,
+        )
+        influx_token = result.stdout.strip()
+
+        if result.returncode or not influx_token:
+            info("Influx token not available in pass password manager, disabling vector")
+            enable_vector = False
+        else:
+            files.put(
+                name="Write vector config with influx token",
+                src=io.StringIO(f"""sinks:\n influx:\n    token: "{influx_token}"\n"""),
+                dest=vector_influx_config,
+            )
+
+    enable_vector_config = files.line(
+        name="Enable vector config",
+        path="/etc/default/vector",
+        line="VECTOR_CONFIG_DIR=/etc/vector/config.d",
+    )
+
+    systemd.service(
+        name="(Re)start vector service",
+        service="vector",
+        enabled=enable_vector,
+        restarted=any((
+            install_vector.will_change,
+            install_vector_config.will_change,
+            enable_vector_config.will_change,
+        )),
+    )
+
+    ############################################
     # Write config stamp
     ############################################
     version = subprocess.run(

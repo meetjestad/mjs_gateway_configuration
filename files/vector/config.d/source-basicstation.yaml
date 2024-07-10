@@ -1,0 +1,110 @@
+sources:
+  basicstation:
+    type: journald
+    include_units: [basicstation.service]
+
+    # Process full history (only effective on first run, next runs will
+    # continue at previous checkpoint)
+    since_now: false
+
+transforms:
+  basicstation_parse:
+    type: remap
+    inputs:
+      - basicstation
+    source: >-
+      parts = parse_regex!(.message, r'^(?P<prefix>[\d-]* [\d.:]* \[[A-Z:\d]*\]) (?P<msg>.*)$')
+
+      . = {"host": .host, "timestamp": .timestamp};
+
+      if (match(parts.msg, r'^RX ')) {
+        . |= parse_regex!(parts.msg, r'^RX (?P<frequency_MHz>[\d.]*)MHz DR(?P<dr>\d*) SF(?P<sf>\d*)/BW(?P<bw_kHz>\d*) snr=(?P<snr_dB>[-\d.]*) rssi=(?P<rssi_dBm>[-\d.]*) xtime=0x[\dA-F]* - (?P<pkttype>[a-z]*) [^(]*(\((?P<pktlen_bytes>\d*) bytes\))?$')
+        .pktevent = "rx"
+        .pktlen_bytes = .pktlen_bytes || 0
+      } else if (match(parts.msg, r'^\[CRC FAIL\] ')) {
+        . |= parse_regex!(parts.msg, r'^\[CRC FAIL\] (?P<frequency_MHz>[\d.]*)MHz (?P<snr_dB>[-\d.]*)/(?P<rssi_dBm>[-\d.]*) SF(?P<sf>\d*)/BW(?P<bw_kHz>\d*) \(mod=\d*/dr=(?P<dr>\d*)/bw=\d*\) xtick=[\da-f]* \(\d*\) (?P<pktlen_bytes>\d*) bytes: .*$')
+        .pktevent = "crc_fail"
+        .pkttype = ""
+      } else if (match(parts.msg, r'^TX ')) {
+        . |= parse_regex!(parts.msg, r'^TX [\da-f:]* diid=\d* \[ant#\d*\] - [a-z ]*: (?P<frequency_MHz>[\d.]*)MHz (?P<txpow_dBm>[-\d.]*)dBm ant#(?P<txunit>\d*)\(\d*\) DR(?P<dr>\d*) SF(?P<sf>\d*)/BW(?P<bw_kHz>\d*) frame=[\dA-F.]* \((?P<pktlen_bytes>\d*) bytes\)$')
+        .pktevent = "tx"
+        .pkttype = ""
+      } else if (match(parts.msg, r'^Mean MCU drift ')) {
+        . |= parse_regex!(parts.msg, r'^Mean MCU drift vs SX130X#0: (?P<drift_ppm>[\d.-]*)ppm$')
+      } else {
+        . = {}
+      }
+
+  # Split up into different log_to_metric targets, since that does not handle missing fields well
+  basicstation_route:
+    type: route
+    inputs: ["basicstation_parse"]
+    reroute_unmatched: false # Just drop unmatched
+    route:
+      rx: 'exists(.pktevent) && .pktevent != "tx"'
+      tx: 'exists(.pktevent) && .pktevent == "tx"'
+      drift: "exists(.drift_ppm)"
+
+  basicstation_drift_to_metric:
+    type: log_to_metric
+    inputs: ["basicstation_route.drift"]
+    metrics:
+      - type: summary
+        field: drift_ppm
+        namespace: "basicstation"
+        tags:
+          host: "{{host}}"
+
+  basicstation_pktevent_to_metric:
+    type: log_to_metric
+    inputs:
+      - basicstation_route.rx
+      - basicstation_route.tx
+    metrics:
+      - type: counter
+        field: pktevent
+        namespace: "basicstation"
+        tags: &tags_for_event
+          host: "{{host}}"
+          pktevent: "{{pktevent}}"
+          frequency_MHz: "{{frequency_MHz}}"
+          dr: "{{dr}}"
+          sf: "{{sf}}"
+          bw_kHz: "{{bw_kHz}}"
+          pkttype: "{{pkttype}}"
+          # This omits a tag for txunit, since that
+          # fails if it is missing and we do not want to duplicate this metric
+          # and tag list
+      - type: summary
+        field: pktlen_bytes
+        namespace: "basicstation"
+        tags: *tags_for_event
+
+  basicstation_pktevent_rx_to_metric:
+    type: log_to_metric
+    inputs:
+      - basicstation_route.rx
+    metrics:
+      - type: summary
+        field: snr_dB
+        namespace: "basicstation"
+        tags: *tags_for_event
+      - type: summary
+        field: rssi_dBm
+        namespace: "basicstation"
+        tags: *tags_for_event
+
+  basicstation_pktevent_tx_to_metric:
+    type: log_to_metric
+    inputs:
+      - basicstation_route.tx
+    metrics:
+      - type: summary
+        field: txpow_dBm
+        namespace: "basicstation"
+        tags: *tags_for_event
+
+  basic_station_final_output:
+    type: filter
+    inputs: ["basicstation_*_to_metric"]
+    condition: "true"

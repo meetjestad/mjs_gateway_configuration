@@ -1,0 +1,17 @@
+sources:
+  host:
+    type: host_metrics
+    collectors:
+      - cpu
+      - disk
+      - load
+      - host
+      - memory
+      - network
+    scrape_interval_secs: 60
+
+transforms:
+  host_final_output:
+    type: filter
+    inputs: ["host"]
+    condition: "true"
