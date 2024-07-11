@@ -12,9 +12,8 @@ transforms:
     type: remap
     inputs:
       - basicstation
-    source: >-
+    source: |-
       parts = parse_regex!(.message, r'^(?P<prefix>[\d-]* [\d.:]* \[[A-Z:\d]*\]) (?P<msg>.*)$')
-
       . = {"host": .host, "timestamp": .timestamp};
 
       if (match(parts.msg, r'^RX ')) {
@@ -32,7 +31,7 @@ transforms:
       } else if (match(parts.msg, r'^Mean MCU drift ')) {
         . |= parse_regex!(parts.msg, r'^Mean MCU drift vs SX130X#0: (?P<drift_ppm>[\d.-]*)ppm$')
       } else {
-        . = {}
+        abort
       }
 
   # Split up into different log_to_metric targets, since that does not handle missing fields well
