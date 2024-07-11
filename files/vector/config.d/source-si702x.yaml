@@ -1,0 +1,47 @@
+sources:
+  si702x:
+    type: exec
+    # This uses grep with a wildcard to get nice filename:contents output
+    command: ["sh", "-c", "cd /sys/bus/i2c/drivers/si7020/*/iio:device* && grep . in_*"]
+    mode: scheduled
+    scheduled:
+      exec_interval_secs: 300
+    framing:
+      method: bytes
+    include_stderr: false
+
+transforms:
+  si702x_parse:
+    type: remap
+    inputs:
+      - si702x
+    source: |-
+      if (.message == "") {
+        abort
+      }
+
+      d = parse_key_value!(.message, field_delimiter: "\n", key_value_delimiter: ":")
+      .case_temperature_degC = (to_float(d.in_temp_raw) + to_float(d.in_temp_offset)) * to_float(d.in_temp_scale) / 1000.0
+      .case_humidity_pct = (to_float(d.in_humidityrelative_raw) + to_float(d.in_humidityrelative_offset)) * to_float(d.in_humidityrelative_scale) / 1000.0
+
+  si702x_to_metric:
+    type: log_to_metric
+    inputs: [si702x_parse]
+    metrics:
+      - type: gauge
+        field: case_temperature_degC
+        namespace: sensors
+        tags:
+          host: "{{host}}"
+          sensor: si702x
+      - type: gauge
+        field: case_humidity_pct
+        namespace: sensors
+        tags:
+          host: "{{host}}"
+          sensor: si702x
+
+  si702x_final_output:
+    type: filter
+    inputs: [si702x_to_metric]
+    condition: "true"
