@@ -5,6 +5,21 @@
 Description=Remote SSH access through Nuttssh
 After=network.target
 
+# After this many restarts (within StartLimitInterval), reboot the entire
+# system. This guards against a 4G modem that can no longer register on the
+# network or an ethernet connection that is stuck without a link after a
+# badly-timed powercycle (both have been witnessed on the Lorank gateway).
+#
+# Note that this just counts restarts, not consecutive failures, but that seems
+# to be the best systemd can do (and might also be safer than relying on
+# nuttssh exit status for failures).
+StartLimitBurst=180
+StartLimitAction=reboot
+# This interval is a lot bigger than than StartLimitBurst * RestartSec to
+# ensure that even if nuttssh takes a lot of time to discover failure, the
+# limit is still triggered.
+StartLimitInterval=24h
+
 [Service]
 User=nuttssh
 ExecStartPre=/bin/sh -c "[ -f ~/.ssh/id_rsa ] || ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''"
@@ -16,9 +31,6 @@ ExecStart=/usr/bin/ssh %H@nuttssh.meetjestad.net -p 1878 -R 22:localhost:22 -NT 
 # Wait for some time between restarts
 RestartSec=60
 Restart=always
-# Disable burst restart limits, since we have a big RestartSec already
-# (StartLimit might cause Systemd to give up restarting the service...)
-StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target
