@@ -550,11 +550,17 @@ def do_configure():
         dest='/etc/systemd/system/vector.service.d/override.conf',
     )
 
+    vector_config_exclude = ["*/sink-influx-token.yaml"]
+    # Basicstation statistics require way too much data traffic on
+    # 4G-connected gateways
+    if modem_dev:
+        vector_config_exclude += ["*/source-basicstation.yaml"]
+
     install_vector_config = files.sync(
         name="Install vector config",
         src="files/vector/config.d",
         dest="/etc/vector/config.d",
-        exclude="*/sink-influx-token.yaml",
+        exclude=vector_config_exclude,
         delete=True,
     )
 
