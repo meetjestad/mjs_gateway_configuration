@@ -544,6 +544,12 @@ def do_configure():
         src="https://apt.vector.dev/pool/v/ve/vector_0.39.0-1_armhf.deb",
     )
 
+    install_vector_service_override = files.put(
+        name="Install vector service override",
+        src='files/vector/override.conf',
+        dest='/etc/systemd/system/vector.service.d/override.conf',
+    )
+
     install_vector_config = files.sync(
         name="Install vector config",
         src="files/vector/config.d",
@@ -579,12 +585,18 @@ def do_configure():
         line="VECTOR_CONFIG_DIR=/etc/vector/config.d",
     )
 
+    if install_vector_service_override.will_change:
+        systemd.daemon_reload(
+            name="Reload systemd",
+        )
+
     systemd.service(
         name="(Re)start vector service",
         service="vector",
         enabled=enable_vector,
         restarted=any((
             install_vector.will_change,
+            install_vector_service_override.will_change,
             install_vector_config.will_change,
             enable_vector_config.will_change,
         )),
