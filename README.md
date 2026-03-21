@@ -41,7 +41,7 @@ are utilities, also to be called through `pyinfra`).
 
 Easiest way to install Pyinfra is using `pipx`:
 
-    pip install pyinfra
+    pipx install pyinfra
 
 External info
 -------------
@@ -66,7 +66,7 @@ convention is to use `mjs-gateway-123` as the gateway id, which must
 match the hostname later. Alternatively, you can use ttn-lw-cli with a
 command like this:
 
-        ttn-lw-cli gateways create mjs-gateway-123
+        ttn-lw-cli gateways create mjs-gateway-123 \
                 --name "Meet je stad! #123 - www.meetjestad.net" --organization-id meet-je-stad \
                 --location-public --require-authenticated-connection \
                 --schedule-anytime-delay 530ms --frequency-plan-id EU_863_870_TTN \
