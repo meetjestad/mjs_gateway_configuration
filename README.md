@@ -42,6 +42,7 @@ are utilities, also to be called through `pyinfra`).
 Easiest way to install Pyinfra is using `pipx`:
 
     pipx install pyinfra
+    pipx inject pyinfra legacycrypt
 
 External info
 -------------

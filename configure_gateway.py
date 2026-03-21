@@ -1,10 +1,10 @@
-import crypt
 import datetime
 import io
 import json
 import os
 import subprocess
 
+import legacycrypt
 from pyinfra import api, facts, host
 from pyinfra.operations import apt, files, python, server, systemd
 
@@ -144,7 +144,7 @@ def do_configure():
     # access is available.
     users = host.get_fact(facts.server.Users)
     pw_hash = users.get(username, {}).get('password')
-    pw_is_default = (crypt.crypt(default_password, pw_hash) == pw_hash)
+    pw_is_default = (legacycrypt.crypt(default_password, pw_hash) == pw_hash)
     pw_is_disabled = (pw_hash == '!')
 
     if pw_is_default or pw_is_disabled:
@@ -167,7 +167,7 @@ def do_configure():
             server.user(
                 name="Set user password",
                 user=username,
-                password=crypt.crypt(password),
+                password=legacycrypt.crypt(password),
             )
     else:
         info(f"Password for user '{username}' is not default and not disabled, leaving unchanged")
