@@ -383,8 +383,6 @@ def do_configure():
     # Reboot to apply SPI changes
     ############################################
     if enable_spi.changed or load_spidev.changed:
-        # TODO: pyinfra does not seem to be able to reconnect after a reboot?
-        # https://github.com/pyinfra-dev/pyinfra/issues/1110
         server.reboot(
             name="Reboot to enable SPI"
         )
