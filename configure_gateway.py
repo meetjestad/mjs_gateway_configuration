@@ -455,19 +455,6 @@ def do_configure():
             mode="755",
         ),
 
-        # Tool to reset concentrator board by twiddling some GPIO pin.
-        # Copied from an older Lorank gateway, (some version of) the source can
-        # be found here: https://github.com/Ideetron/Lorank/blob/master/lorank8v1/ResetIC880A.cpp
-        # Might be replaceable by reset_lgw.sh, though a first try (passing "14"
-        # as the GPIO number) did not seem to work:
-        # https://github.com/kersing/lora_gateway/blob/master/reset_lgw.sh
-        files.put(
-            name="Install radio reset script",
-            src='files/basicstation/reset-radio.sh',
-            dest='/opt/basicstation/reset-radio.sh',
-            mode="755",
-        ),
-
         files.put(
             name="Install basicstation config",
             src=f'files/basicstation/config/{basicstation_config}',
@@ -486,6 +473,17 @@ def do_configure():
             target='/etc/ssl/certs/ca-certificates.crt'
         ),
     ]
+
+    # Install, but do not enable or start - called explicitly by basicstation
+    install_reset_radio = files.put(
+        name="Install reset-radio service",
+        src='files/basicstation/reset-radio.service',
+        dest='/etc/systemd/system/reset-radio.service',
+    )
+    if install_reset_radio.will_change:
+        systemd.daemon_reload(
+            name="Reload systemd",
+        )
 
     install_and_start_service(
         service="basicstation",
