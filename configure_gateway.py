@@ -98,7 +98,7 @@ def do_configure():
     ############################################
     # Hostname
     ############################################
-    server.hostname(
+    set_hostname = server.hostname(
         name="Set hostname",
         hostname=host.name,
     )
@@ -393,7 +393,7 @@ def do_configure():
     if gw_id:
         key_file = '/opt/basicstation/config/tc.key'
         key_file_info = host.get_fact(facts.files.File, key_file)
-        if key_file_info is None:
+        if key_file_info is None or set_hostname.will_change or gw_eui is not None:
             def generate_api_key():
                 today = datetime.date.today().isoformat()
                 try:
