@@ -16,6 +16,7 @@ gateways = [
     ("mjs-gateway-7", {}),
     ("mjs-gateway-8", {}),
     ("mjs-gateway-9", {}),
+    ("mjs-gateway-10", {}),
 ]
 
 # TODO: Is there a nicer way for this?
