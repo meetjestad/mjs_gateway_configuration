@@ -126,6 +126,25 @@ server a bit (stable releases are in the [`rootfs/release`
 folder](https://rcn-ee.net/rootfs/release/), while snapshot releases are
 in the [`rootfs/snapshot` folder](https://rcn-ee.net/rootfs/snapshot/).
 
+2026-03: Used Debian 13 image from
+https://rcn-ee.net/rootfs/debian-armhf-13-base-v6.19/ to get gpiod v2 tools.
+
+### Older bootloaders
+On a clean Lorank with older bootloader:
+ - Devicetree overlays do not
+ - Flashing to EMMC does not work
+ - Recent images (Debian 13) will not boot
+
+To circumvent this, you can press S2 to load the bootloader from SD instead of
+using the bootloader from EMMC and only boot linux from the SD card.
+
+To do this, powerdown the board, unplug the beaglebone from the radio expansion
+board (otherwise boot will just hang entirely - the S2 boot mode apparently
+uses some other pins) and then keep S2 pressed for a couple of seconds while
+plugging in the power.
+
+To permanently fix this, write to eMMC, which will update the bootloader.
+
 ### Initial installation
  1. Flash image on SD card
  2. Setup key authentication for root (login with debian:temppwd, create
@@ -133,7 +152,15 @@ in the [`rootfs/snapshot` folder](https://rcn-ee.net/rootfs/snapshot/).
 
         pyinfra 192.168.7.2 --sudo --data _sudo_password=temppwd --data ssh_password=temppwd --ssh-user debian server.user_authorized_keys user=root public_keys=files/authorized_keys/amersfoort
 
- 3. Reboot (to complete SD filesystem resize)
+    TODO: on Debian 13 images, a password change is forced on next loging,
+    which breaks the above command. A password can be preconfigured using
+    `sysconf.txt` on the SD card BOOT partition now, so try that to
+    preconfigure the original default password (and hope is does not force a
+    change anymore then) and then run the above command for the rest (or use
+    sysconf.txt to set up all passwords and SSH keys).
+
+ 3. Reboot (to complete SD filesystem resize). Debian 13 images do this
+    automatically on first boot.
  4. Put gateway in inventory
  5. Set up internet connectivity (either plug in ethernet, or set up NAT
     and routing via USB, see below).
@@ -242,17 +269,14 @@ after powerup). After flashing is complete (5-10 minutes), the board
 should power down. Remove the SD card and power it up again to boot from
 the internal flash now.
 
-On a clean Lorank with older bootloader, this needs button S2 to load
-the bootloader from SD instead of using the bootloader from EMMC and
-only boot linux from the SD card. Without this, flashing to EMMC does
-not work (night-rider style sequence never starts). To do this,
-powerdown the board, unplug the beaglebone from the radio expansion
-board and then keep S2 pressed for a couple of seconds while plugging in
-the power.
-
 Note that the SD card will now write to the EMMC everytime you boot from
 it, so make sure to not boot from it again (or edit `/boot/uEnv.txt` on
 the SD card to disable the flashing again).
+
+Note that eMMC writing does not work with an older bootloader (night-rider
+style sequence never starts). You can use the S2-button boot (see above) to
+circumvent this. Keep the S2 button pressed while the reboot happens, or
+powerdown and up again after the reboot.
 
 [write_emmc]: https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#Flashing_eMMC
 
