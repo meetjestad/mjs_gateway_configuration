@@ -3,10 +3,30 @@ import io
 import json
 import os
 import subprocess
+import dataclasses
+import re
 
 import legacycrypt
 from pyinfra import api, facts, host
 from pyinfra.operations import apt, files, python, server, systemd
+
+
+@dataclasses.dataclass
+class DeviceInfo:
+    basicstation_build: str = None
+    basicstation_config: str = None
+    username: str
+    default_password: str
+    default_hostname: re.Pattern
+
+
+lorank = DeviceInfo(
+    basicstation_build="armhf-sx1301",
+    basicstation_config="lorank.conf",
+    username='debian',
+    default_password='temppwd',
+    default_hostname=re.compile(r'beaglebone'),
+)
 
 
 def do_configure():
@@ -17,12 +37,7 @@ def do_configure():
     if model in ('TI AM335x BeagleBone Green', 'TI AM335x BeagleBone Black'):
         # This assumes a beaglebone is inside a lorank (early loranks
         # used BBB, later used BBG).
-        device = "lorank"
-        basicstation_build = "armhf-sx1301"
-        basicstation_config = "lorank.conf"
-        username = 'debian'
-        default_password = 'temppwd'
-        default_hostname = 'beaglebone'
+        device = lorank
     else:
         info("Unknown board model, aborting: {model}")
         return
@@ -60,7 +75,7 @@ def do_configure():
             gw_eui = None
 
     hostname = host.get_fact(facts.server.Hostname)
-    if hostname != host.name and hostname != default_hostname:
+    if hostname != host.name and not device.default_hostname.fullmatch(hostname):
         if not yesnoprompt(f"Current hostname is {hostname}, change to {host.name}? [y/N]"):
             info("Aborting, mismatching hostname will cause trouble")
             return
@@ -118,7 +133,7 @@ def do_configure():
     else:
         authorized_keys = "amersfoort"
 
-    for user in ('root', username):
+    for user in ('root', device.username):
         server.user_authorized_keys(
             name=f"Setup SSH authorized keys for {user}",
             user=user,
@@ -143,15 +158,15 @@ def do_configure():
     # someone else for recovering a gateway in case nobody with SSH key
     # access is available.
     users = host.get_fact(facts.server.Users)
-    pw_hash = users.get(username, {}).get('password')
-    pw_is_default = (legacycrypt.crypt(default_password, pw_hash) == pw_hash)
+    pw_hash = users.get(device.username, {}).get('password')
+    pw_is_default = (legacycrypt.crypt(device.default_password, pw_hash) == pw_hash)
     pw_is_disabled = (pw_hash == '!')
 
     if pw_is_default or pw_is_disabled:
         if pw_is_default:
-            info(f"Password for user '{username}' is still at default, seeing if we have a password to set")
+            info(f"Password for user '{device.username}' is still at default, seeing if we have a password to set")
         else:
-            info(f"Password for user '{username}' is disabled, seeing if we have a password to set")
+            info(f"Password for user '{device.username}' is disabled, seeing if we have a password to set")
 
         result = subprocess.run(('pass', 'show', 'other/ssh/mjs-gateway-x'), stdout=subprocess.PIPE, text=True)
         password = result.stdout.strip()
@@ -160,17 +175,17 @@ def do_configure():
             info("Password not available in pass password manager, disabling password instead to be changed later")
             server.user(
                 name="Disable user password",
-                user=username,
+                user=device.username,
                 password="!",
             )
         else:
             server.user(
                 name="Set user password",
-                user=username,
+                user=device.username,
                 password=legacycrypt.crypt(password),
             )
     else:
-        info(f"Password for user '{username}' is not default and not disabled, leaving unchanged")
+        info(f"Password for user '{device.username}' is not default and not disabled, leaving unchanged")
 
     ############################################
     # Sudo
@@ -355,7 +370,7 @@ def do_configure():
     ############################################
     # Enable SPI
     ############################################
-    if device == "lorank":
+    if device == lorank:
         # Enable SPI hardware and set up SPI pins by loading an overlay.
         # https://groups.google.com/d/msg/beagleboard/RewjY34TPYE/6b6YjSu0FQAJ
         # Note that by default, in the Debian 9.3 image there is a "universal
@@ -450,14 +465,14 @@ def do_configure():
     update_basicstation_ops = [
         files.put(
             name="Install basicstation binary",
-            src=f"files/basicstation/{basicstation_build}/station",
+            src=f"files/basicstation/{device.basicstation_build}/station",
             dest="/opt/basicstation/station",
             mode="755",
         ),
 
         files.put(
             name="Install basicstation config",
-            src=f'files/basicstation/config/{basicstation_config}',
+            src=f'files/basicstation/config/{device.basicstation_config}',
             dest='/opt/basicstation/config/station.conf',
         ),
 
@@ -494,7 +509,7 @@ def do_configure():
     ############################################
     # Temperature / Humidity sensor
     ############################################
-    if device == "lorank":
+    if device == lorank:
         # This is a compiled device-tree overlay file. The source file, with
         # compilation instructions is in the same directory. It applies to a
         # SI7013/20/21 sensor connected to the I²C grove port (i2c2) on the
