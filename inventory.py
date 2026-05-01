@@ -17,6 +17,9 @@ gateways = [
     ("mjs-gateway-8", {}),
     ("mjs-gateway-9", {}),
     ("mjs-gateway-10", {}),
+    ("mjs-gateway-11", {
+        "4g_apn": "globaldata.iot",
+    }),
 ]
 
 # TODO: Is there a nicer way for this?
