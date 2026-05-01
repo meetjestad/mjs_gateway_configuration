@@ -13,14 +13,27 @@ from pyinfra.operations import apt, files, python, server, systemd
 
 @dataclasses.dataclass
 class DeviceInfo:
-    basicstation_build: str = None
-    basicstation_config: str = None
+    gw_eui_fact: str
     username: str
     default_password: str
     default_hostname: re.Pattern
+    basicstation_build: str = None
+    basicstation_config: str = None
+    lorad_config: str = None
+
+
+class BasicstationGatewayEui(api.FactBase):
+    """ Returns the gateway EUI based on the MAC address (as done by lorabasics/basicstation) """
+    command = "cat /sys/class/net/eth0/address | awk -F: '{print $1$2$3 \"fffe\" $4$5$6}'"
+
+
+class KerosGatewayEui(api.FactBase):
+    """ Returns the EUI64 env var (as done by the python basicstation as well) """
+    command = "echo ${EUI64}"
 
 
 lorank = DeviceInfo(
+    gw_eui_fact=BasicstationGatewayEui,
     basicstation_build="armhf-sx1301",
     basicstation_config="lorank.conf",
     username='debian',
@@ -28,16 +41,23 @@ lorank = DeviceInfo(
     default_hostname=re.compile(r'beaglebone'),
 )
 
+kerlink_istation = DeviceInfo(
+    gw_eui_fact=KerosGatewayEui,
+    lorad_config="/etc/lorad",
+    username='admin',
+    default_password='pwd4admin',
+    default_hostname=re.compile(r'klk-wiis-[0-9]*'),
+)
 
-def do_configure():
-    modem_dev = host.data.get('4g_modem_dev')
-    apn = host.data.get('4g_apn')
 
+def do_setup():
     model = host.get_fact(facts.server.Command, 'cat /sys/firmware/devicetree/base/model').rstrip('\x00')
     if model in ('TI AM335x BeagleBone Green', 'TI AM335x BeagleBone Black'):
         # This assumes a beaglebone is inside a lorank (early loranks
         # used BBB, later used BBG).
         device = lorank
+    elif model == 'Kerlink Wirnet iStation':
+        device = kerlink_istation
     else:
         info("Unknown board model, aborting: {model}")
         return
@@ -61,7 +81,7 @@ def do_configure():
         gw_id = host.name
         ttn_eui = json.loads(result.stdout)["ids"].get("eui", "").upper()
         # This predicts the EUI used by basicstation by calculating it from the device ethernet MAC address
-        gw_eui = host.get_fact(GatewayEui).upper()
+        gw_eui = host.get_fact(device.gw_eui_fact).upper()
         if ttn_eui == "":
             info("No EUI set in TTN, will update TTN details")
         elif ttn_eui != gw_eui:
@@ -80,6 +100,58 @@ def do_configure():
             info("Aborting, mismatching hostname will cause trouble")
             return
 
+    ############################################
+    # Setup system
+    ############################################
+    hostname_changed = setup_system(device)
+
+    ############################################
+    # Configure EUI in TTN
+    ############################################
+    eui_updated = False
+    if gw_id and gw_eui:
+        def update_eui():
+            try:
+                subprocess.run(
+                    ("ttn-lw-cli", "gateways", "set", gw_id, "--gateway-eui", gw_eui),
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                )
+            except subprocess.CalledProcessError as e:
+                print(e.output)
+                print(f"Failed to set gateway EUI: {e}")
+        python.call(
+            name="Update EUI in TTN",
+            function=update_eui,
+        )
+        eui_updated = True
+
+    regenerate_api_key = hostname_changed or eui_updated
+
+    ############################################
+    # Setup LoRaWAN
+    ############################################
+    setup_lorawan(device, gw_id, regenerate_api_key)
+
+    ############################################
+    # Write config stamp
+    ############################################
+    version = subprocess.run(
+        (
+            'git', '--git-dir', os.path.join(os.path.dirname(__file__), '.git'),
+            'describe', '--tags', '--always', '--long', '--dirty',
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
+    ).stdout
+    date = datetime.date.today().isoformat()
+    files.put(
+        name="Write config stamp",
+        src=io.StringIO(
+            f"Last configured on {date} using {os.path.basename(__file__)}, version {version}\n"
+        ),
+        dest="/root/pyinfra.stamp",
+    )
+
+
+def setup_system(device):
     ############################################
     # Apt update
     ############################################
@@ -101,14 +173,15 @@ def do_configure():
     ############################################
     # Remove unneeded pacakges
     ############################################
-    apt.packages(
-        # For some reason these packages are installed by default in the
-        # bbb minimal images, so remove them to save memory and reduce
-        # attack surface
-        name="Remove unneeded packages",
-        packages=('nginx', "nginx-common", "mender-client"),
-        present=False,
-    )
+    if device == lorank:
+        apt.packages(
+            # For some reason these packages are installed by default in the
+            # bbb minimal images, so remove them to save memory and reduce
+            # attack surface
+            name="Remove unneeded packages",
+            packages=('nginx', "nginx-common", "mender-client"),
+            present=False,
+        )
 
     ############################################
     # Hostname
@@ -118,12 +191,21 @@ def do_configure():
         hostname=host.name,
     )
 
-    files.line(
+    files.replace(
         name="Replace localhost entry",
         path="/etc/hosts",
-        line=r'^127\.0\.1\.1\s.*',
+        text=r'^127\.0\.1\.1\s.*',
         replace=f"127.0.1.1\t{host.name}",
     )
+
+    if device == kerlink_istation:
+        # The default hostname is passed on the kernel commandline, which
+        # prevents /etc/hostname from being used. This applies it anyway after
+        # startup.
+        install_and_start_service(
+            service="apply-hostname",
+            src='files/apply-hostname/apply-hostname.service',
+        )
 
     ############################################
     # SSH keys
@@ -234,38 +316,40 @@ def do_configure():
     if install_useful.will_change:
         will_install_apt_packages = True
 
-    ############################################
-    # Mail delivery
-    ############################################
-    # Use nullmailer to setup mail delivery for e.g. unattended
-    # upgrades). This does not set up authentication, so this only works
-    # for non-relayed mail (that is handled by the server we forward to).
-    install_nullmailer = apt.packages(
-        name="Install nullmailer",
-        packages=('nullmailer',),
-    )
-    if install_nullmailer.will_change:
-        will_install_apt_packages = True
+    # Keros has no nullmailer (nor any other sendmail)
+    if device != kerlink_istation:
+        ############################################
+        # Mail delivery
+        ############################################
+        # Use nullmailer to setup mail delivery for e.g. unattended
+        # upgrades). This does not set up authentication, so this only works
+        # for non-relayed mail (that is handled by the server we forward to).
+        install_nullmailer = apt.packages(
+            name="Install nullmailer",
+            packages=('nullmailer',),
+        )
+        if install_nullmailer.will_change:
+            will_install_apt_packages = True
 
-    files.put(
-        # All mail will use this envelope sender
-        name="Set nullmailer allmailfrom",
-        src=io.StringIO("gateways@meetjestad.net\n"),
-        dest='/etc/nullmailer/allmailfrom',
-    )
-    files.put(
-        # All mail to localhost / local accounts will be forwarded to
-        # this address
-        name="Set nullmailer adminaddr",
-        src=io.StringIO("gateways@meetjestad.net\n"),
-        dest='/etc/nullmailer/adminaddr',
-    )
-    files.put(
-        # All mail will be forwarded to this host
-        name="Set nullmailer remote",
-        src=io.StringIO("mail.meetjestad.net\n"),
-        dest='/etc/nullmailer/remotes',
-    )
+        files.put(
+            # All mail will use this envelope sender
+            name="Set nullmailer allmailfrom",
+            src=io.StringIO("gateways@meetjestad.net\n"),
+            dest='/etc/nullmailer/allmailfrom',
+        )
+        files.put(
+            # All mail to localhost / local accounts will be forwarded to
+            # this address
+            name="Set nullmailer adminaddr",
+            src=io.StringIO("gateways@meetjestad.net\n"),
+            dest='/etc/nullmailer/adminaddr',
+        )
+        files.put(
+            # All mail will be forwarded to this host
+            name="Set nullmailer remote",
+            src=io.StringIO("mail.meetjestad.net\n"),
+            dest='/etc/nullmailer/remotes',
+        )
 
     ############################################
     # Unattended upgrades
@@ -277,16 +361,41 @@ def do_configure():
     if install_unattended_upgrades.will_change:
         will_install_apt_packages = True
 
-    files.put(
-        # Unattended upgrades is enabled in apt.conf by default (if the
-        # appropriate timers are enabled), but configure it to send
-        # e-mail reports of upgrades to keep an eye on the changes.
-        name="Configure unattended upgrades",
-        src=io.StringIO(
-            'Unattended-Upgrade::Mail "root";'
-        ),
-        dest="/etc/apt/apt.conf.d/50unattended-upgrades-local",
-    )
+    if device == kerlink_istation:
+        # On kerlink, the config that is shipped on normal Debian is not
+        # included, so create them manually
+        files.put(
+            name="Configure unattended upgrades",
+            src=io.StringIO(
+                'Unattended-Upgrade::Origins-Pattern {\n'
+                '  "origin=*";\n'
+                '}\n'
+                'Unattended-Upgrade::Remove-Unused-Dependencies "true";\n'
+                'Unattended-Upgrade::SyslogEnable "true";\n'
+            ),
+            dest="/etc/apt/apt.conf.d/50unattended-upgrades",
+        )
+        files.put(
+            name="Enable unattended upgrades",
+            src=io.StringIO(
+                'APT::Periodic::Update-Package-Lists "always";\n'
+                'APT::Periodic::Unattended-Upgrade "always";\n'
+            ),
+            dest="/etc/apt/apt.conf.d/20auto-upgrades",
+        )
+
+    # Keros has no nullmailer (nor any other sendmail)
+    if device != kerlink_istation:
+        files.put(
+            # Unattended upgrades is enabled in apt.conf by default (if the
+            # appropriate timers are enabled), but configure it to send
+            # e-mail reports of upgrades to keep an eye on the changes.
+            name="Configure unattended upgrades mail",
+            src=io.StringIO(
+                'Unattended-Upgrade::Mail "root";'
+            ),
+            dest="/etc/apt/apt.conf.d/50unattended-upgrades-local",
+        )
 
     systemd.service(
         name="Enable apt-daily timer",
@@ -303,29 +412,47 @@ def do_configure():
     ############################################
     # Firewall
     ############################################
-    install_firewall = apt.packages(
-        name="Install nftables firewall package",
-        packages=('nftables',),
-    )
-    if install_firewall.will_change:
-        will_install_apt_packages = True
+    if device == kerlink_istation:
+        # Keros does not offer nftables package, so use iptables instead
+        # (installed by default)
+        # Default firewall is reasonable, but add some extra restrictions
+        files.put(
+            name="Install ipv4 firewall configuration",
+            src='files/iptables/block-wwan-input.rules',
+            dest='/etc/iptables/iptables.d/block-wwan-input.rules',
+        )
+        files.put(
+            name="Install ipv6 firewall configuration",
+            src='files/iptables/block-wwan-input.rules',
+            dest='/etc/iptables/ip6tables.d/block-wwan-input.rules',
+        )
+    else:
+        install_firewall = apt.packages(
+            name="Install nftables firewall package",
+            packages=('nftables',),
+        )
+        if install_firewall.will_change:
+            will_install_apt_packages = True
 
-    files.put(
-        name="Install nftables firewall configuration",
-        src='files/nftables/nftables.conf',
-        dest='/etc/nftables.conf',
-    )
+        files.put(
+            name="Install nftables firewall configuration",
+            src='files/nftables/nftables.conf',
+            dest='/etc/nftables.conf',
+        )
 
-    systemd.service(
-        name="Enable nftables firewall service",
-        service='nftables.service',
-        enabled=True,
-        running=True,
-    )
+        systemd.service(
+            name="Enable nftables firewall service",
+            service='nftables.service',
+            enabled=True,
+            running=True,
+        )
 
     ############################################
     # GSM modem setup
     ############################################
+    modem_dev = host.data.get('4g_modem_dev')
+    apn = host.data.get('4g_apn')
+
     if modem_dev and apn:
         install_pppd = apt.packages(
             name="Install pppd",
@@ -367,6 +494,14 @@ def do_configure():
                 reloaded=True,
             )
 
+    if device == kerlink_istation and apn:
+        install_pppd_chat = files.template(
+            name="Install 4G ofono provisioning config",
+            src="files/ofono/provisioning",
+            dest="/etc/network/ofono/provisioning",
+            apn=apn,
+        )
+
     ############################################
     # Enable SPI
     ############################################
@@ -391,120 +526,42 @@ def do_configure():
             path='/etc/modules',
             line='spidev'
         )
+
+        ############################################
+        # Reboot to apply SPI changes
+        ############################################
+        if enable_spi.changed or load_spidev.changed:
+            server.reboot(
+                name="Reboot to enable SPI"
+            )
+    elif device in (kerlink_istation,):
+        pass
     else:
         raise Exception(f"Unknown device: {device}")
 
-    ############################################
-    # Reboot to apply SPI changes
-    ############################################
-    if enable_spi.changed or load_spidev.changed:
-        server.reboot(
-            name="Reboot to enable SPI"
+    return set_hostname.will_change
+
+    if device == kerlink_istation:
+        # This seems to be the remote config/access stuff
+        systemd.service(
+            name="Disable WARC engine",
+            service='warc-engine.service',
+            enabled=False,
+            running=False,
         )
-
-    ############################################
-    # Configure TTN API key
-    ############################################
-    if gw_id:
-        key_file = '/opt/basicstation/config/tc.key'
-        key_file_info = host.get_fact(facts.files.File, key_file)
-        if key_file_info is None or set_hostname.will_change or gw_eui is not None:
-            def generate_api_key():
-                today = datetime.date.today().isoformat()
-                try:
-                    key_json = subprocess.run(
-                        (
-                            "ttn-lw-cli", "gateways", "api-keys", "create", gw_id,
-                            "--name", f"Gateway key by pyinfra ({today})",
-                            "--right-gateway-link"
-                        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
-                    ).stdout
-
-                    gw_key = json.loads(key_json)["key"]
-                    info(f"Generated TTN gateway key: {gw_key}")
-
-                    files.put(
-                        name="Set gateway authentication key",
-                        src=io.StringIO(f"Authorization: Bearer {gw_key}\n"),
-                        dest=key_file,
-                    )
-                except subprocess.CalledProcessError as e:
-                    print(e.stderr.decode())
-                    print(e.stdout.decode())
-                    info(f"Failed to add API key: {e}")
-                except Exception as e:
-                    info(f"Failed to add API key: {e}")
-
-            python.call(
-                name="Generate API key in TTN and configure it on gateway",
-                function=generate_api_key,
-            )
-
-    ############################################
-    # Configure EUI in TTN
-    ############################################
-    if gw_id and gw_eui:
-        def update_eui():
-            try:
-                subprocess.run(
-                    ("ttn-lw-cli", "gateways", "set", gw_id, "--gateway-eui", gw_eui),
-                    check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                )
-            except subprocess.CalledProcessError as e:
-                print(e.output)
-                print(f"Failed to set gateway EUI: {e}")
-        python.call(
-            name="Update EUI in TTN",
-            function=update_eui,
+        systemd.service(
+            name="Disable zero-touch-provisioning service",
+            service='ztp.service',
+            enabled=False,
+            running=False,
         )
-
-    ############################################
-    # Basicstation packet forwarder
-    ############################################
-
-    update_basicstation_ops = [
-        files.put(
-            name="Install basicstation binary",
-            src=f"files/basicstation/{device.basicstation_build}/station",
-            dest="/opt/basicstation/station",
-            mode="755",
-        ),
-
-        files.put(
-            name="Install basicstation config",
-            src=f'files/basicstation/config/{device.basicstation_config}',
-            dest='/opt/basicstation/config/station.conf',
-        ),
-
-        files.put(
-            name="Install basicstation uri config",
-            src='files/basicstation/config/tc.uri',
-            dest='/opt/basicstation/config/tc.uri',
-        ),
-
-        files.link(
-            name="Create tc.trust symlink",
-            path='/opt/basicstation/config/tc.trust',
-            target='/etc/ssl/certs/ca-certificates.crt'
-        ),
-    ]
-
-    # Install, but do not enable or start - called explicitly by basicstation
-    install_reset_radio = files.put(
-        name="Install reset-radio service",
-        src='files/basicstation/reset-radio.service',
-        dest='/etc/systemd/system/reset-radio.service',
-    )
-    if install_reset_radio.will_change:
-        systemd.daemon_reload(
-            name="Reload systemd",
+        # No point in keeping this enabled, just adds attack surface
+        systemd.service(
+            name="Stop cockpit webui",
+            service='cockpit.service',
+            enabled=False,
+            running=False,
         )
-
-    install_and_start_service(
-        service="basicstation",
-        src='files/basicstation/basicstation.service',
-        restarted=any(op.will_change for op in update_basicstation_ops),
-    )
 
     ############################################
     # Temperature / Humidity sensor
@@ -537,105 +594,225 @@ def do_configure():
             line='uboot_overlay_addr4=/lib/firmware/SI7020.dtbo',
         )
 
-    ############################################
-    # Solar logger
-    ############################################
-    files.line(
-        # Enable this unconditionally, just in case it is needed
-        name="Enable UART4 overlay for solar datalogger",
-        path='/boot/uEnv.txt',
-        line='uboot_overlay_addr5=BB-UART4-00A0.dtbo',
-    )
-
-    ############################################
-    # Vector data collection agent
-    ############################################
-    install_vector = apt.deb(
-        name="Install vector package",
-        src="https://apt.vector.dev/pool/v/ve/vector_0.39.0-1_armhf.deb",
-    )
-
-    install_vector_service_override = files.put(
-        name="Install vector service override",
-        src='files/vector/override.conf',
-        dest='/etc/systemd/system/vector.service.d/override.conf',
-    )
-
-    vector_config_exclude = ["*/sink-influx-token.yaml"]
-    # Basicstation statistics require way too much data traffic on
-    # 4G-connected gateways
-    if modem_dev:
-        vector_config_exclude += ["*/source-basicstation.yaml"]
-
-    install_vector_config = files.sync(
-        name="Install vector config",
-        src="files/vector/config.d",
-        dest="/etc/vector/config.d",
-        exclude=vector_config_exclude,
-        delete=True,
-    )
-
-    vector_influx_config = '/etc/vector/config.d/sink-influx-token.yaml'
-    vector_influx_config_info = host.get_fact(facts.files.File, vector_influx_config)
-    enable_vector = True
-    if vector_influx_config_info is None:
-        info("No influx token config for vector, seeing if we have a token available")
-        result = subprocess.run(
-            ('pass', 'show', 'other/influx/influx.meetjestad.net/mjs-gateway-x'),
-            stdout=subprocess.PIPE, text=True,
+        ############################################
+        # Solar logger
+        ############################################
+        files.line(
+            # Enable this unconditionally, just in case it is needed
+            name="Enable UART4 overlay for solar datalogger",
+            path='/boot/uEnv.txt',
+            line='uboot_overlay_addr5=BB-UART4-00A0.dtbo',
         )
-        influx_token = result.stdout.strip()
 
-        if result.returncode or not influx_token:
-            info("Influx token not available in pass password manager, disabling vector")
-            enable_vector = False
-        else:
-            files.put(
-                name="Write vector config with influx token",
-                src=io.StringIO(f"""sinks:\n influx:\n    token: "{influx_token}"\n"""),
-                dest=vector_influx_config,
+    # Keros has no vector available
+    if device != kerlink_istation:
+        ############################################
+        # Vector data collection agent
+        ############################################
+        install_vector = apt.deb(
+            name="Install vector package",
+            src="https://apt.vector.dev/pool/v/ve/vector_0.39.0-1_armhf.deb",
+        )
+
+        install_vector_service_override = files.put(
+            name="Install vector service override",
+            src='files/vector/override.conf',
+            dest='/etc/systemd/system/vector.service.d/override.conf',
+        )
+
+        vector_config_exclude = ["*/sink-influx-token.yaml"]
+        # Basicstation statistics require way too much data traffic on
+        # 4G-connected gateways
+        apn = host.data.get('4g_apn')
+        if apn:
+            vector_config_exclude += ["*/source-basicstation.yaml"]
+
+        install_vector_config = files.sync(
+            name="Install vector config",
+            src="files/vector/config.d",
+            dest="/etc/vector/config.d",
+            exclude=vector_config_exclude,
+            delete=True,
+        )
+
+        vector_influx_config = '/etc/vector/config.d/sink-influx-token.yaml'
+        vector_influx_config_info = host.get_fact(facts.files.File, vector_influx_config)
+        enable_vector = True
+        if vector_influx_config_info is None:
+            info("No influx token config for vector, seeing if we have a token available")
+            result = subprocess.run(
+                ('pass', 'show', 'other/influx/influx.meetjestad.net/mjs-gateway-x'),
+                stdout=subprocess.PIPE, text=True,
+            )
+            influx_token = result.stdout.strip()
+
+            if result.returncode or not influx_token:
+                info("Influx token not available in pass password manager, disabling vector")
+                enable_vector = False
+            else:
+                files.put(
+                    name="Write vector config with influx token",
+                    src=io.StringIO(f"""sinks:\n influx:\n    token: "{influx_token}"\n"""),
+                    dest=vector_influx_config,
+                )
+
+        enable_vector_config = files.line(
+            name="Enable vector config",
+            path="/etc/default/vector",
+            line="VECTOR_CONFIG_DIR=/etc/vector/config.d",
+        )
+
+        if install_vector_service_override.will_change:
+            systemd.daemon_reload(
+                name="Reload systemd",
             )
 
-    enable_vector_config = files.line(
-        name="Enable vector config",
-        path="/etc/default/vector",
-        line="VECTOR_CONFIG_DIR=/etc/vector/config.d",
-    )
-
-    if install_vector_service_override.will_change:
-        systemd.daemon_reload(
-            name="Reload systemd",
+        systemd.service(
+            name="(Re)start vector service",
+            service="vector",
+            enabled=enable_vector,
+            restarted=any((
+                install_vector.will_change,
+                install_vector_service_override.will_change,
+                install_vector_config.will_change,
+                enable_vector_config.will_change,
+            )),
         )
 
-    systemd.service(
-        name="(Re)start vector service",
-        service="vector",
-        enabled=enable_vector,
-        restarted=any((
-            install_vector.will_change,
-            install_vector_service_override.will_change,
-            install_vector_config.will_change,
-            enable_vector_config.will_change,
-        )),
-    )
+
+def setup_lorawan(device, gw_id, regenerate_api_key):
+    ############################################
+    # Basicstation packet forwarder
+    ############################################
+    if device == kerlink_istation:
+        # This configures the python-based reimplementation of basicstation, as
+        # shipped with Keros6
+        basicstation_configdir = '/etc/station'
+        update_basicstation_ops = [
+            files.put(
+                name="Install basicstation uri config",
+                src='files/basicstation/config/tc.uri',
+                dest=f'{basicstation_configdir}/tc.uri',
+            ),
+            files.file(
+                name="Remove basicstation cups config",
+                path=f'{basicstation_configdir}/cups-boot.uri',
+                present=False,
+            ),
+        ]
+
+        systemd.service(
+            name="Enable and (re)start basicstation service",
+            service='basicstation.service',
+            enabled=True,
+            restarted=any(op.will_change for op in update_basicstation_ops),
+            running=True,
+        )
+
+        # Default EU868 config, generated with:
+        #
+        #   conflex -ajo /tmp/lorad.json \
+        #     /usr/share/lorad/frequency_plans/sx1301/EU868.json /usr/share/lorad/boards/wiis-f868.json
+        #
+        # Manually checked against TTN-generated global_conf.json, frequency assignment is the same.
+        files.put(
+            name="Install lorad config",
+            src="files/lorad/lorad.json",
+            dest="/etc/lorad/lorad.json",
+        ),
+
+        # No need for a station.conf, defaults are fine
+
+        # Note that we do not configure a CUPS server for remote management, so
+        # the log will show some scary "[station:WARNING] Something abnormal
+        # happened. Switching to -bak credentials set." messages, but that is
+        # only for CUPS, the LNS/TC connection will be made in parallel.
+    elif device.basicstation_build:
+        # This installs and configures the compiled "lorabasics" version of basicstation (the reference implementation)
+        update_basicstation_ops = [
+            files.put(
+                name="Install basicstation binary",
+                src=f"files/basicstation/{device.basicstation_build}/station",
+                dest="/opt/basicstation/station",
+                mode="755",
+            ),
+
+            files.put(
+                name="Install basicstation config",
+                src=f'files/basicstation/config/{device.basicstation_config}',
+                dest='/opt/basicstation/config/station.conf',
+            ),
+
+            files.put(
+                name="Install basicstation uri config",
+                src='files/basicstation/config/tc.uri',
+                dest='/opt/basicstation/config/tc.uri',
+            ),
+
+            files.link(
+                name="Create tc.trust symlink",
+                path='/opt/basicstation/config/tc.trust',
+                target='/etc/ssl/certs/ca-certificates.crt'
+            ),
+        ]
+
+        # Install, but do not enable or start - called explicitly by basicstation
+        install_reset_radio = files.put(
+            name="Install reset-radio service",
+            src='files/basicstation/reset-radio.service',
+            dest='/etc/systemd/system/reset-radio.service',
+        )
+        if install_reset_radio.will_change:
+            systemd.daemon_reload(
+                name="Reload systemd",
+            )
+
+        install_and_start_service(
+            service="basicstation",
+            src='files/basicstation/basicstation.service',
+            restarted=any(op.will_change for op in update_basicstation_ops),
+        )
+        basicstation_configdir = '/opt/basicstation/config'
+    else:
+        raise Exception(f"Unknown lora forwarder: {device}")
 
     ############################################
-    # Write config stamp
+    # Configure TTN API key
     ############################################
-    version = subprocess.run(
-        (
-            'git', '--git-dir', os.path.join(os.path.dirname(__file__), '.git'),
-            'describe', '--tags', '--always', '--long', '--dirty',
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
-    ).stdout
-    date = datetime.date.today().isoformat()
-    files.put(
-        name="Write config stamp",
-        src=io.StringIO(
-            f"Last configured on {date} using {os.path.basename(__file__)}, version {version}\n"
-        ),
-        dest="/root/pyinfra.stamp",
-    )
+    if gw_id:
+        key_file = f'{basicstation_configdir}/tc.key'
+        key_file_info = host.get_fact(facts.files.File, key_file)
+        if key_file_info is None or regenerate_api_key:
+            def generate_api_key():
+                today = datetime.date.today().isoformat()
+                try:
+                    key_json = subprocess.run(
+                        (
+                            "ttn-lw-cli", "gateways", "api-keys", "create", gw_id,
+                            "--name", f"Gateway key by pyinfra ({today})",
+                            "--right-gateway-link"
+                        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, text=True,
+                    ).stdout
+
+                    gw_key = json.loads(key_json)["key"]
+                    info(f"Generated TTN gateway key: {gw_key}")
+
+                    files.put(
+                        name="Set gateway authentication key",
+                        src=io.StringIO(f"Authorization: Bearer {gw_key}\n"),
+                        dest=key_file,
+                    )
+                except subprocess.CalledProcessError as e:
+                    print(e.stderr.decode())
+                    print(e.stdout.decode())
+                    info(f"Failed to add API key: {e}")
+                except Exception as e:
+                    info(f"Failed to add API key: {e}")
+
+            python.call(
+                name="Generate API key in TTN and configure it on gateway",
+                function=generate_api_key,
+            )
 
 
 def yesnoprompt(prompt):
@@ -644,11 +821,6 @@ def yesnoprompt(prompt):
 
 def info(msg):
     print(f"{host.name}: {msg}")
-
-
-class GatewayEui(api.FactBase):
-    """ Returns the gateway EUI based on the MAC address (as done by basicstation as well) """
-    command = "cat /sys/class/net/eth0/address | awk -F: '{print $1$2$3 \"fffe\" $4$5$6}'"
 
 
 # TODO: This could be an operation itself, but I could not quickly
@@ -688,4 +860,4 @@ def install_and_start_service(service, src, restarted=False):
     )
 
 
-do_configure()
+do_setup()

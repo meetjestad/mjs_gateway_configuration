@@ -179,6 +179,35 @@ configuration):
 
     pyinfra mjs-gateway-123 --data ssh_hostname=192.168.7.2 --ssh-user root configure_gateway.py
 
+Setting up a Kerlink iStation gateway
+-------------------------------------
+This config supports the iStation gateway running KerOS 6.x (which is Debian and apt-based).
+
+To set up:
+ 1. Do a factory reset. Make sure the gateway cannot access the internet before
+    the ztp service is disabled.
+ 2. Log in to the WebUI (see [docs](https://keros.docs.kerlink.com/en/system/webui#first-connection) for
+    default passwords. For a gateway upgraded from a factory reset 5.x firmware,
+    the admin password is `pwd4admin` ([found here](https://docs.kerlink.com/wirnet-productline/doku.php?id=wiki:systeme_mana:connection_credentials#default_password))
+ 3. Disable and stop the "ztp" (zero touch provisioning) service (can be done
+    from the webui). If you leave this enabled while the gateway is connected
+    to the internet, it will apply configuration from the cloud (which can
+    include passwords, LoRa config and probably more).
+ 4. Set up SSH key auth for the admin user and log in via SSH, or use the terminal tab.
+    Set up root SSH key auth,  using e.g.:
+
+     sudo cp /home/admin/.ssh/authorized_keys /home/root/.ssh/authorized_keys
+
+    Note: `/root/` exists but is unused!
+
+ 6. Put gateway in inventory.
+ 7. Run initial sync:
+
+     pyinfra inventory.py --data ssh_hostname=1.2.3.4 --limit mjs-gateway-123 configure_gateway.py
+
+The gateway can be configured via ethernet-over-USB, the gateway is configured
+as a DHCP client on its USB ethernet interface by default.
+
 Subsequent configuration
 ------------------------
 After the initial install, changes can be made to the pyinfra script and

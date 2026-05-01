@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply /etc/hostname
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+# Do not use hostnamectl, not available yet so early
+ExecStart=/bin/sh -c 'hostname "$(cat /etc/hostname)"'
+# Reload systemd, since %H replacements (used in e.g. nuttssh) are "hostname at the time of unit load"
+ExecStart=systemctl daemon-reload
+
+[Install]
+WantedBy=sysinit.target

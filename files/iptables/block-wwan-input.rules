@@ -1,0 +1,6 @@
+*filter
+
+# Block all WWAN input
+-I INPUT 1 -i wwan -j REJECT
+
+COMMIT
