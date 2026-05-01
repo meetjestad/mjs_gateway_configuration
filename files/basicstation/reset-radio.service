@@ -1,0 +1,21 @@
+[Unit]
+Description=LoRa Radio Reset
+
+# Service to reset concentrator board by twiddling some GPIO pin.
+# Copied from an older Lorank gateway, (some version of) the source can
+# be found here: https://github.com/Ideetron/Lorank/blob/master/lorank8v1/ResetIC880A.cpp
+#
+# This is a separate service, because gpioset must stay running (once it
+# terminated, the reset pin falls back to the default floating mode and there
+# is a pullup somewhere).
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+# --toggle 0 ensures gpioset actually quits after the hold period
+ExecStartPre=/usr/bin/gpioset --hold-period 100ms --toggle 0 --by-name "P9_26 [uart1_rxd]"=0
+ExecStartPre=/usr/bin/gpioset --hold-period 100ms --toggle 0 --by-name "P9_26 [uart1_rxd]"=1
+ExecStart=/usr/bin/gpioset --by-name "P9_26 [uart1_rxd]"=0
+# No final sleep, must be configured in basicstation (if needed at all - added one for good measure)
