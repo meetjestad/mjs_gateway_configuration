@@ -147,24 +147,19 @@ To permanently fix this, write to eMMC, which will update the bootloader.
 
 ### Initial installation
  1. Flash image on SD card
- 2. Setup key authentication for root (login with debian:temppwd, create
-   `/root/.ssh/authorized_keys` using sudo). Can be done with:
+ 2. Login via SSH (default login debian:temppwd). This will force a password
+    change, use `needschange`, which will be automatically updated by the configure
+    script later.
+ 3. Setup key authentication for root. Can be done with:
 
-        pyinfra 192.168.7.2 --sudo --data _sudo_password=temppwd --data ssh_password=temppwd --ssh-user debian server.user_authorized_keys user=root public_keys=files/authorized_keys/amersfoort
+        pyinfra 192.168.7.2 --sudo --data _sudo_password=temppwd --data ssh_password=changeme --ssh-user debian server.user_authorized_keys user=root public_keys=files/authorized_keys/amersfoort
 
-    TODO: on Debian 13 images, a password change is forced on next loging,
-    which breaks the above command. A password can be preconfigured using
-    `sysconf.txt` on the SD card BOOT partition now, so try that to
-    preconfigure the original default password (and hope is does not force a
-    change anymore then) and then run the above command for the rest (or use
-    sysconf.txt to set up all passwords and SSH keys).
-
- 3. Reboot (to complete SD filesystem resize). Debian 13 images do this
+ 4. Reboot (to complete SD filesystem resize). Debian 13 images do this
     automatically on first boot.
- 4. Put gateway in inventory
- 5. Set up internet connectivity (either plug in ethernet, or set up NAT
+ 5. Put gateway in inventory
+ 6. Set up internet connectivity (either plug in ethernet, or set up NAT
     and routing via USB, see below).
- 5. Run initial sync:
+ 7. Run initial sync:
 
      pyinfra inventory.py --data ssh_hostname=192.168.7.2 --limit mjs-gateway-123 configure_gateway.py
 
@@ -184,24 +179,28 @@ Setting up a Kerlink iStation gateway
 This config supports the iStation gateway running KerOS 6.x (which is Debian and apt-based).
 
 To set up:
- 1. Do a factory reset. Make sure the gateway cannot access the internet before
-    the ztp service is disabled.
+ 1. Do a factory reset (button pressed on powerup, release after a few seconds
+    when led starts blinking, then *press once*). Make sure the gateway cannot
+    access the internet before the ztp service is disabled.
  2. Log in to the WebUI (see [docs](https://keros.docs.kerlink.com/en/system/webui#first-connection) for
     default passwords. For a gateway upgraded from a factory reset 5.x firmware,
-    the admin password is `pwd4admin` ([found here](https://docs.kerlink.com/wirnet-productline/doku.php?id=wiki:systeme_mana:connection_credentials#default_password))
- 3. Disable and stop the "ztp" (zero touch provisioning) service (can be done
+    the admin password is `pwd4admin` ([found here](https://docs.kerlink.com/wirnet-productline/doku.php?id=wiki:systeme_mana:connection_credentials#default_password)).
+ 3. Change the password to `needschange`, which will be automatically updated
+    by the configure script later.
+ 4. Disable and stop the "ztp" (zero touch provisioning) service (can be done
     from the webui). If you leave this enabled while the gateway is connected
     to the internet, it will apply configuration from the cloud (which can
     include passwords, LoRa config and probably more).
- 4. Set up SSH key auth for the admin user and log in via SSH, or use the terminal tab.
-    Set up root SSH key auth,  using e.g.:
+ 5. Enable internet access for the gateway again.
+ 6. Set up (temporary) SSH for root, can be done via the "Terminal" tab:
 
-     sudo cp /home/admin/.ssh/authorized_keys /home/root/.ssh/authorized_keys
+        admin@klk-wiis-070273:~$ sudo mkdir /home/root/.ssh
+        admin@klk-wiis-070273:~$ sudo vi /home/root/.ssh/authorized_keys
 
     Note: `/root/` exists but is unused!
 
- 6. Put gateway in inventory.
- 7. Run initial sync:
+ 7. Put gateway in inventory.
+ 8. Run initial sync:
 
      pyinfra inventory.py --data ssh_hostname=1.2.3.4 --limit mjs-gateway-123 configure_gateway.py
 
