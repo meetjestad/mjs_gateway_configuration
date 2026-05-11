@@ -15,7 +15,6 @@ from pyinfra.operations import apt, files, python, server, systemd
 class DeviceInfo:
     gw_eui_fact: str
     username: str
-    default_password: str
     default_hostname: re.Pattern
     basicstation_build: str = None
     basicstation_config: str = None
@@ -37,7 +36,6 @@ lorank = DeviceInfo(
     basicstation_build="armhf-sx1301",
     basicstation_config="lorank.conf",
     username='debian',
-    default_password='temppwd',
     default_hostname=re.compile(r'beaglebone'),
 )
 
@@ -45,10 +43,11 @@ kerlink_istation = DeviceInfo(
     gw_eui_fact=KerosGatewayEui,
     lorad_config="/etc/lorad",
     username='admin',
-    default_password='pwd4admin',
     default_hostname=re.compile(r'klk-wiis-[0-9]*'),
 )
 
+# If the normal user password is any of these, it will be changed
+default_passwords = ['temppwd', 'pwd4admin', 'needschange']
 
 def do_setup():
     model = host.get_fact(facts.server.Command, 'cat /sys/firmware/devicetree/base/model').rstrip('\x00')
@@ -241,9 +240,14 @@ def setup_system(device):
     # access is available.
     users = host.get_fact(facts.server.Users)
     pw_hash = users.get(device.username, {}).get('password')
-    pw_is_default = (legacycrypt.crypt(device.default_password, pw_hash) == pw_hash)
+    pw_is_default = any(legacycrypt.crypt(pwd, pw_hash) == pw_hash for pwd in default_passwords)
     pw_is_disabled = (pw_hash == '!')
 
+    # Since querying the password manager for the intended password causes a
+    # passphrase prompt, only do it when the password is still default or
+    # locked. This means if the password is not default and not the intended
+    # password, then it will not be changed/checked, but that is an acceptable
+    # risk.
     if pw_is_default or pw_is_disabled:
         if pw_is_default:
             info(f"Password for user '{device.username}' is still at default, seeing if we have a password to set")
